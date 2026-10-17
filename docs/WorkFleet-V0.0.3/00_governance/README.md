@@ -31,6 +31,7 @@ updated: 2026-10-17
 | `02_requirements/inbox/REQ-INBOX-20261017-002-需求增补.md` | 推演发现、原需求未覆盖的增补需求（G1–G12） | proposed |
 | `08_knowledge/meetings/qa-log.md` | 与用户的关键问答：问题、选项、推荐、用户原话、意见要点、落点 | active |
 | `02_requirements/inbox/REQ-INBOX-20261017-001-原始设计说明书.md` | 用户设计说明书原文（逐字） | received |
+| `04_planning/roadmap.md` | 产品路线图（v1/v2/v3/v4+），每版更新 | draft |
 | `01_product/user-guide.md` | 大白话使用说明（给用户和朋友看） | draft |
 
 ## 4. 标签
