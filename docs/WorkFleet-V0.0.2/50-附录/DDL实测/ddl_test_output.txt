@@ -1,0 +1,31 @@
+tables|57
+indexes|67
+triggers|3
+Runtime error near line 11: CHECK constraint failed: launch_json IS NULL OR json_valid(launch_json) (19)
+Runtime error near line 13: CHECK constraint failed: family IN ('acp','stdio-custom','http-cloud','http-inbound','cli-oneshot','supervisor') (19)
+Runtime error near line 16: UNIQUE constraint failed: channel_account.adapter, channel_account.credential_fingerprint (19)
+Runtime error near line 21: FOREIGN KEY constraint failed (19)
+Runtime error near line 26: UNIQUE constraint failed: turn_queue.fleet_session_id (19)
+fts 登录超时|1
+fts 随时对|1
+fts after update 随时对|0
+fts after update 深色主题|1
+Runtime error near line 37: UNIQUE constraint failed: event.dedupe_key (19)
+Runtime error near line 39: CHECK constraint failed: (status='held') = (hold_reason IS NOT NULL) (19)
+Runtime error near line 42: CHECK constraint failed: remaining >= 0 (19)
+Runtime error near line 47: CHECK constraint failed: rounds_max BETWEEN 1 AND 4 (19)
+Runtime error near line 50: CHECK constraint failed: retries BETWEEN 0 AND 1 (19)
+Runtime error near line 52: UNIQUE constraint failed: sv_meeting_event.meeting_id, sv_meeting_event.seq (19)
+Runtime error near line 55: CHECK constraint failed: (held=1) = (held_reason IS NOT NULL) (19)
+mm_trigger|0 3 * * 1
+Runtime error near line 62: UNIQUE constraint failed: content_item.content_hash (19)
+rows agent_profile|2
+rows channel_account|1
+rows turn_running|1
+rows outbox|1
+rows sv_meeting|1
+rows sv_meeting_turn|1
+rows sv_meeting_event|2
+rows sv_message|1
+rows content_item|1
+ok

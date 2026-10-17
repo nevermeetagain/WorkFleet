@@ -1,0 +1,992 @@
+好的，我已经完成了所有开源项目的深度调研。现在我将基于三轮推理框架，输出完整的研究报告打包文件。
+
+---
+
+# 🚀 AideanFleet — ACP多对多通讯平台 深度研究报告 v1.0
+
+> **报告范围**：需求深度拆解 · 六大开源项目全维度分析 · 技术架构设计 · 自研方案 · 最终决策表格
+> **报告版本**：AideanFleet V0.0.2 研究产出
+> **研究日期**：2026-10-17
+
+---
+
+## 📦 目录
+
+```
+REPORT/
+├── 00_深度需求分析.md          ← 5W1H三轮推理
+├── 01_ACP协议底层解析.md       ← ACP技术规范穿透
+├── 02_开源项目矩阵分析/
+│   ├── 02-A_WechatClawbot.md
+│   ├── 02-B_Paperclip.md
+│   ├── 02-C_Pentagi.md
+│   ├── 02-D_Orca.md
+│   ├── 02-E_Hindsight.md
+│   └── 02-F_BettaFish.md
+├── 03_技术缺口与补充方案.md
+├── 04_自研架构方案.md
+├── 05_总控模式设计.md
+├── 06_汇总决策表格.md
+└── 07_实施路线图.md
+```
+
+---
+
+# 00 — 深度需求分析（三轮推理）
+
+## 第一轮：5W1H 发散分析
+
+### What — 客观事实与现象
+
+**用户的核心痛点**，精确描述如下：
+
+| 痛点编号 | 现象 | 影响 |
+|---|---|---|
+| P-01 | 5+个开发工具同时运行，但只有1个微信账号 | 无法同时绑定多个Bot（WeChat ClawBot 1:1约束） |
+| P-02 | 频繁扫码绑定/解绑 | 信息遗漏、工作流中断 |
+| P-03 | 缺少统一的多输入→多输出路由层 | 没有多对多的ACP调度平台 |
+| P-04 | 无法按产品线/项目分流消息到不同输出端 | 微信/QQ/飞书无法智能分离消息流 |
+| P-05 | 缺少总控"职业经理人"智能体 | 所有输入端消息未经过滤直达用户，噪音大 |
+
+**已确认的关键技术约束**：
+`WeChat ClawBot` 的硬约束：每个微信账号只能创建一个Bot，且该Bot与创建者的微信账号一一绑定（1:1），多人无法共用同一个Bot。
+
+**已确认的ACP协议性质**：
+ACP是一个用于编辑器/IDE与编码智能体之间通讯的开放协议，而非通用的公司编排协议。它基于JSON-RPC、面向Session、具备能力协商机制，在实践中提供连接/初始化、会话新建与加载、提示轮次、流式更新事件、结构化工具调用事件等能力，目前主要采用stdio传输，Streamable HTTP仍在草稿阶段。
+
+---
+
+### Why — 深层原因与动机
+
+**直接原因**：ACP生态（ClaudeCode、Codex CLI等）天然是1:1单向连接设计，没有内置的多路由、多输出端管理层。
+
+**根本原因**：ACP协议定位是"运行时/会话协议"而非"控制平面协议"。应将ACP视为执行运行时协议，而不是控制平面协议——让各工具在内部使用ACP，上层平台保持解耦，通过网关层与各工具通讯。
+
+**动机**：用户需要在ACP层之上，构建一个**路由控制平面（Routing Control Plane）**，实现：
+- 多输入（N个CLI工具）→ 路由层 → 多输出（M个通讯平台）
+- 路由层本身还需具备智能调度（总控模式）能力
+
+---
+
+### Where / When — 边界条件
+
+| 边界 | 说明 |
+|---|---|
+| **输入端约束** | ACP协议（stdio JSON-RPC）、HTTP API、CLI spawn三种通讯模式 |
+| **输出端约束** | 微信iLink API、飞书OpenAPI、QQ机器人API、钉钉API、Discord/Telegram Bot API |
+| **WeChat 1:1约束** | 必须通过网关层管理多个Bot账号，每个Bot对应一个微信账号 |
+| **部署约束** | 总控模式必须运行在本地设备（用户设备）；其他模式可两端直连或云端 |
+| **端口约束** | Aidean默认3000端口；AideanBot默认3333端口（待确认，标记为⚠️待确认） |
+| **时序约束** | 定时任务最小粒度：分钟级；支持工作日/休息日判断 |
+
+---
+
+### Who — 主体与责任方
+
+```
+┌─────────────────────────────────────────────┐
+│              AideanFleet 系统边界              │
+│                                             │
+│  输入端(N)           路由控制平面         输出端(M)  │
+│  ClaudeCode  ──┐                    ┌── 微信ClawBot │
+│  Codex CLI   ──┤   ┌─────────────┐  ├── 飞书      │
+│  Cursor      ──┼──▶│ AideanFleet │──┼── QQ机器人   │
+│  Coze        ──┤   │  路由层      │  ├── 钉钉      │
+│  OpenClaw    ──┤   └──────┬──────┘  ├── Discord   │
+│  自定义Agent  ──┘          │         └── Telegram  │
+│                           │                      │
+│                    ┌──────▼──────┐               │
+│                    │  总控模式    │               │
+│                    │ (职业经理人) │               │
+│                    └────────────┘               │
+└─────────────────────────────────────────────────┘
+```
+
+---
+
+### How — 执行手段与路径
+
+核心实现路径分为三层：
+
+**Layer 1：协议适配层**（对接各输入端ACP/CLI/HTTP）
+**Layer 2：路由控制平面**（管理模式/通知模式/团队模式/总控模式）
+**Layer 3：输出端适配层**（对接各通讯平台API）
+
+---
+
+### What If — 变化情景分析
+
+| 前提变化 | 影响 | 应对方案 |
+|---|---|---|
+| WeChat iLink API变更 | 微信输出端失效 | 适配层隔离，单独更新Adapter |
+| ACP协议升级（HTTP Transport正式发布） | stdio传输可被HTTP替换 | 传输层抽象，支持多Transport |
+| 用户新增第4个产品线 | 路由规则需扩展 | 路由规则数据库化，支持热更新 |
+| 总控模型响应超时 | 任务积压，用户无响应 | 总控模式设超时熔断，降级直通 |
+| 微信Bot扫码失效（二维码过期） | 输出端断连 | 自动重登录循环（Loop机制） |
+| 某输入端进程崩溃 | 该通道消息丢失 | 进程守护+消息队列持久化 |
+
+---
+
+## 第二轮：苏格拉底式追问
+
+### 核心结论1：必须构建路由控制平面
+
+**追问**：是否真的没有现成开源项目能满足"多对多路由"需求？
+
+**证据核实**：
+
+- nightsailer/wechat-clawbot 是"支持多用户、多端点网关的AI后端SDK"，但其设计是多Bot路由到多AI后端，**方向相反**（多输入→1输出），不支持1输入→多输出。
+- wechat-acp 是将微信消息桥接到任意ACP兼容智能体的桥接工具，它登录iLink Bot API，轮询消息，转发给ACP智能体，再将回复发送回微信。是纯1:1桥接，**无路由能力**。
+- Orca运行一个编码智能体舰队并行工作，Hindsight给智能体提供随时间改进的记忆能力。两者均不涉及多输出端通讯路由。
+
+**结论**：**已确认** — 现有开源项目均不具备完整的多对多路由控制平面能力，需要自研或深度整合。
+
+---
+
+### 核心结论2：总控模式与现有多Agent框架的关系
+
+**追问**：Paperclip 和 Pentagi 的多Agent编排能否直接复用为"总控模式"？
+
+**Paperclip的org-chart模型分析**：
+Paperclip的Agent数据模型包含：id, company_id, name, role, reports_to（组织树边），capabilities，adapter_type（claude_local/codex_local/http），adapter_config，runtime_config，context_mode（thin/fat），budget等字段。这是一个完整的"职业经理人"层级结构原型！
+
+当心跳触发时，Paperclip的适配器作为编排层与智能体运行时之间的桥梁，每个适配器知道如何调用特定类型的AI智能体并捕获其结果。
+
+**Pentagi的编排模型分析**：
+PentAGI围绕任务层级和专业化团队组织工作。一个编排器智能体位于工作流顶层，接收用户的自然语言目标，维护整体状态，并向下委派工作；研究员智能体收集情报，开发者智能体制定策略，执行器智能体在沙盒中执行命令并向上汇报结果。
+
+**双向钢人论证**：
+
+| 维度 | Paperclip 复用 | Pentagi 复用 |
+|---|---|---|
+| **支持论** | org-chart天然映射"总控→各输入端"层级；适配器架构可扩展到通讯平台输出端 | 多层Agent编排成熟；专业化角色分工清晰 |
+| **反对论** | Paperclip是任务管理平台，不是通讯路由平台；无输出端（微信/飞书）适配器 | PentAGI专为安全测试设计，领域耦合深；无通讯平台集成 |
+| **结论** | **部分复用** — 可借鉴其heartbeat协议和adapter架构 | **部分复用** — 可借鉴其多层Agent编排和内存系统 |
+
+---
+
+## 第三轮：双向钢人论证 — 自研 vs 深度整合
+
+### 支持自研的最强论证
+
+1. 没有任何现有项目同时覆盖：多输入ACP适配 + 多对多路由 + 多输出端适配 + 总控编排 + 定时任务
+2. 现有项目（Paperclip/Pentagi）架构复杂，引入后的技术债超过自研成本
+3. 用户需要统一的后台配置管理界面，现有项目均无此设计
+
+### 支持深度整合的最强论证
+
+1. ACP协议对接层（wechat-acp/weclaw）已经相当成熟，直接复用可节省大量时间
+2. Hindsight的记忆系统可直接解决"知识库存储"需求
+3. Orca的并行Agent管理经验可指导总控模式设计
+
+### 最终判断：**混合策略**
+
+```
+自研：路由控制平面（核心） + 配置管理后台 + 总控模式调度器
+复用：
+  - wechat-acp/weclaw → 微信iLink协议对接（输出端适配）
+  - Paperclip Adapter架构 → 输入端ACP适配器设计模式
+  - Pentagi流程编排 → 总控Agent编排参考
+  - Hindsight → 知识库/长期记忆模块
+  - BettaFish → Agent"论坛"协作机制（总控模式参考）
+```
+
+---
+
+# 01 — ACP协议底层技术解析
+
+## 1.1 协议定位
+
+ACP最准确的理解是：一个用于交互式编码智能体的运行时/会话协议，通常客户端具备文件系统/终端/编辑器能力。它不内置任务管理、组织结构、审批、预算、公司范围审计日志等能力。
+
+## 1.2 三种通讯模式对比
+
+ACP支持三种通讯模式：**ACP模式**（长驻子进程，JSON-RPC over stdio，最快，复用进程和Session）、**CLI模式**（每条消息spawn新进程，支持通过--resume恢复Session）、**HTTP模式**（OpenAI兼容的Chat Completions API）。自动检测时优先选择ACP模式。
+
+## 1.3 Session管理机制
+
+消息队列管理是关键：同一Session的消息必须排队，每条消息获得独立回复，否则在上一条回复到达前发送新消息会导致中断或"空响应"错误。
+
+## 1.4 /clear 新对话命令机制
+
+对于Claude，推荐使用ACP模式：`npm i -g @agentclientprotocol/claude-agent-acp`，并查阅ACP Session选项文档。
+
+新对话命令（如`/clear`）在不同Agent中的实现：
+
+| Agent | 新对话命令 | 协议层操作 |
+|---|---|---|
+| ClaudeCode (ACP) | `/new` 或 `/clear` | `session/new` JSON-RPC call |
+| Codex (ACP) | `/new` | `session/new`（早期版本有bug，已修复） |
+| ClaudeCode (CLI) | 终止进程+新spawn | `--resume <session-id>` 可恢复 |
+
+---
+
+# 02 — 六大开源项目全维度分析
+
+## 02-A：WechatClawbot / weclaw / wechat-acp
+
+> 覆盖项目：nightsailer/wechat-clawbot · Tespera/weclaw · formulahendry/wechat-acp · Alphainfix/wechat-clawbot
+
+### 技术架构深度穿透
+
+微信ClawBot的后端建立在**iLink API**之上，端点为`ilinkai.weixin.qq.com`，使用REST API。
+
+核心功能包括：完整的iLink API客户端（长轮询getUpdates、sendMessage、getConfig、sendTyping），支持iLink-App-Id / iLink-App-ClientVersion协议头；多Bot账号支持（QR码登录、凭证存储、过期账号清理）；媒体管道（AES-128-ECB加密CDN上传/下载）。
+
+### 多维度分析表
+
+| 维度 | 现状 | 评分 | 缺口 |
+|---|---|---|---|
+| **需求匹配** | 仅覆盖微信单输出端，1:1 Bot绑定 | ⭐⭐ | 无多输出端，无路由层 |
+| **前端** | 无管理UI，纯CLI配置 | ⭐ | 需要完整配置管理界面 |
+| **后端** | Go单体（weclaw）/ Python SDK（nightsailer）/ Node.js（wechat-acp） | ⭐⭐⭐ | 架构成熟可参考 |
+| **数据** | 本地JSON配置文件，无数据库 | ⭐ | 需要数据库支持路由规则、Session管理 |
+| **交互** | 命令行交互，支持/new、/clear等命令 | ⭐⭐⭐ | 缺少跨平台指令统一路由 |
+| **逻辑** | 单Bot→单Agent的直连逻辑 | ⭐⭐ | 无多路由，无模式切换 |
+| **组件** | iLink API Client、ACP Adapter、CLI Runner | ⭐⭐⭐⭐ | 可直接复用 |
+| **复用** | iLink协议层可完整复用 | ✅ | — |
+| **拓展** | 插件式Agent预设，易于添加新Agent | ⭐⭐⭐⭐ | 缺少输出端扩展机制 |
+| **性能** | weclaw（Go）高并发；长轮询低延迟 | ⭐⭐⭐⭐ | 多Bot并发管理需优化 |
+| **配置** | `~/.weclaw/config.json`，支持别名 | ⭐⭐ | 无图形化配置，无热更新 |
+| **知识库** | Alphainfix版本有长期记忆功能 | ⭐⭐⭐ | 不可扩展，无结构化知识库 |
+| **响应** | 支持"typing..."指示器；流式回复 | ⭐⭐⭐⭐ | 跨平台响应格式需统一 |
+| **存储** | 本地文件存储（`~/.dsh/clawbot/`） | ⭐⭐ | 无分布式存储，无多用户隔离 |
+| **资源** | 单进程，资源占用低 | ⭐⭐⭐⭐ | 多Bot场景需资源隔离 |
+
+### 可复用组件清单
+
+```
+✅ iLink API Client（长轮询 + 消息收发）
+✅ AES-128-ECB 媒体加解密管道
+✅ QR码登录 + 凭证存储机制
+✅ ACP stdio 适配器架构
+✅ /new /clear Session命令处理
+✅ Agent 别名路由系统（/ai → claude）
+⚠️ 长期记忆（需替换为Hindsight）
+❌ 多输出端路由（需自研）
+❌ 管理模式/通知模式/团队模式（需自研）
+```
+
+---
+
+## 02-B：Paperclip
+
+> 项目：paperclipai/paperclip
+
+### 技术架构深度穿透
+
+Paperclip在智能体运行时上刻意保持无偏见，通过适配器连接智能体——这些适配器是可插拔模块，桥接Paperclip编排层与智能体实际运行的执行环境。
+
+**Heartbeat协议**（核心调度机制）：
+
+每个智能体在每次唤醒时都遵循相同的心跳流程，这是智能体与Paperclip之间的核心契约。
+
+适配器接口定义为：`interface AgentAdapter { invoke(agent, context): Promise<InvokeResult>; status(run): Promise<RunStatus>; cancel(run): Promise<void>; }`，支持thin（仅传ID）和fat（含完整上下文）两种上下文交付模式。
+
+**最新特性**（v2026.1012.0）：
+
+AgentMail成为默认连接，Neon加入目录支持OAuth或API-key登录，AI账号获得"检查用量"动作。
+
+连接可携带可编辑的使用说明，并在每次授权的智能体轮次中送达。
+
+### 多维度分析表
+
+| 维度 | 现状 | 评分 | 缺口 |
+|---|---|---|---|
+| **需求匹配** | 企业级多Agent任务编排，有org-chart概念 | ⭐⭐⭐⭐ | 面向公司任务管理，非通讯路由 |
+| **前端** | 完整React Web UI，任务看板、Agent聊天 | ⭐⭐⭐⭐⭐ | 可参考UI设计，但不可直接复用 |
+| **后端** | Node.js + PostgreSQL，GraphQL API | ⭐⭐⭐⭐⭐ | — |
+| **数据** | agents表含reports_to层级，adapter_type/config | ⭐⭐⭐⭐⭐ | 可直接参考数据模型设计 |
+| **交互** | 多Agent协作，审批/问答机制 | ⭐⭐⭐⭐ | 缺少通讯平台输出端 |
+| **逻辑** | Heartbeat心跳调度，工作检出（checkout），冲突保护 | ⭐⭐⭐⭐⭐ | 逻辑可借鉴用于总控模式 |
+| **组件** | 适配器注册表、技能目录、团队目录 | ⭐⭐⭐⭐⭐ | 可参考skills架构设计总控Skill |
+| **复用** | 适配器架构模式可复用，数据模型可参考 | ⭐⭐⭐⭐ | — |
+| **拓展** | 插件式适配器，skills catalog | ⭐⭐⭐⭐⭐ | — |
+| **性能** | 异步心跳调度，任务队列 | ⭐⭐⭐⭐ | — |
+| **配置** | 图形化配置，支持连接/密钥管理 | ⭐⭐⭐⭐⭐ | — |
+| **知识库** | 支持Honcho/Mem0/Zep/Supermemory/Cognee | ⭐⭐⭐⭐⭐ | 可直接集成 |
+| **响应** | 流式回复，审批卡片，排队机制 | ⭐⭐⭐⭐ | — |
+| **存储** | PostgreSQL + 加密密钥存储 | ⭐⭐⭐⭐⭐ | — |
+| **资源** | 云托管或自托管，Docker支持 | ⭐⭐⭐⭐ | — |
+
+### 可复用/参考清单
+
+```
+✅ Adapter接口设计（invoke/status/cancel三件套）
+✅ agents数据模型（含reports_to层级结构）→ 总控模式基础
+✅ Heartbeat调度协议 → 总控模式心跳机制参考
+✅ Skills Catalog架构 → 总控职业经理人Skill配置
+✅ Context thin/fat模式 → 控制总控传递给输入端的上下文量
+✅ 审批/问答排队机制 → 重大决策不中断任务
+✅ 知识库连接机制（Mem0/Zep）
+⚠️ 整体平台太重，不建议直接引入依赖
+❌ 无通讯平台输出端（需自研）
+```
+
+---
+
+## 02-C：Pentagi
+
+> 项目：vxcontrol/pentagi（MIT License）
+
+### 技术架构深度穿透
+
+Pentagi是一个monorepo：backend（Go REST + GraphQL API服务器）+ frontend（React + TypeScript Web UI）+ observability（可选监控栈）。
+
+核心Agent角色：Primary Agent（协调所有其他Agent的主编排器）、Generator Agent（将任务分解为有序Subtask列表，最多15个）、Refiner Agent（每个Subtask完成后审查并更新计划）、Reporter Agent（生成最终报告）、Coder Agent（为特定需求编写代码）。
+
+**13种专业化System Prompt**：
+
+PentAGI实现了13种Agent类型的System Prompt：Primary Agent（团队编排+委派）、Assistant（交互模式）、专业化智能体（Pentester/Coder/Installer/Searcher/Memorist/Adviser）、元智能体（Generator/Refiner/Reporter/Enricher/Reflector/Summarizer）。
+
+**知识图谱集成**：
+
+PentAGI集成了Graphiti（由Neo4j驱动的时序知识图谱系统），提供高级语义理解和关系追踪能力。
+
+**技术栈**：
+
+核心服务：React+TypeScript前端、Go+GraphQL后端、PostgreSQL+pgvector向量存储、异步任务队列、多Agent系统；知识图谱：Graphiti API + Neo4j图数据库；监控：Grafana + VictoriaMetrics + Jaeger。
+
+### 多维度分析表
+
+| 维度 | 现状 | 评分 | 缺口 |
+|---|---|---|---|
+| **需求匹配** | 多Agent编排完整，有总控概念，但专为安全测试设计 | ⭐⭐⭐ | 领域耦合深，无通讯路由 |
+| **前端** | React+TypeScript，实时流输出，截图管理 | ⭐⭐⭐⭐ | UI可参考 |
+| **后端** | Go高性能，GraphQL订阅（实时推送） | ⭐⭐⭐⭐⭐ | 架构优秀，可参考 |
+| **数据** | PostgreSQL+pgvector向量存储 | ⭐⭐⭐⭐⭐ | 可直接参考向量存储设计 |
+| **交互** | 多Agent协作，实时日志，进度追踪 | ⭐⭐⭐⭐ | — |
+| **逻辑** | 多层Agent监督，无限循环防护，卡死恢复 | ⭐⭐⭐⭐⭐ | 总控模式防死锁机制可参考 |
+| **组件** | 13类专业化Agent Prompt | ⭐⭐⭐⭐⭐ | 可参考设计总控职业经理人Prompt |
+| **复用** | Go架构可参考，向量存储可借鉴 | ⭐⭐⭐⭐ | — |
+| **拓展** | 外部函数配置（按Agent上下文注入） | ⭐⭐⭐⭐ | — |
+| **性能** | Go goroutine并发，Docker容器隔离 | ⭐⭐⭐⭐⭐ | — |
+| **配置** | 详细的Agent监督配置，LLM提供商多选 | ⭐⭐⭐⭐ | — |
+| **知识库** | Neo4j时序知识图谱 + pgvector | ⭐⭐⭐⭐⭐ | 可复用存储层 |
+| **响应** | GraphQL实时订阅 + SSE | ⭐⭐⭐⭐⭐ | — |
+| **存储** | PostgreSQL主存储，向量附加 | ⭐⭐⭐⭐ | — |
+| **资源** | Docker Compose一键部署，MIT License | ⭐⭐⭐⭐⭐ | — |
+
+### 可复用/参考清单
+
+```
+✅ Primary/Generator/Refiner/Reporter Agent角色设计 → 总控模式角色映射
+✅ 多层Agent监督 + 无限循环防护 → 总控模式稳定性保障
+✅ PostgreSQL + pgvector 向量存储 → 知识库实现
+✅ Graphiti 时序知识图谱 → 高阶知识库选项
+✅ Go + GraphQL 实时推送架构 → 后端技术选型参考
+✅ Docker Compose 部署方案
+✅ 外部函数按Agent上下文注入 → 总控Skill配置机制
+⚠️ 安全测试领域Prompt需完全替换
+❌ 无通讯平台集成
+```
+
+---
+
+## 02-D：Orca (stablyai/orca)
+
+### 技术架构深度穿透
+
+Orca运行一个并行编码智能体舰队。
+
+Orca使用TypeScript开发，截至2026年10月，GitHub Stars达94,294，MIT License，是目前最活跃的ACP类项目之一。
+
+Orca是跨平台IDE（macOS/Windows/Linux），设计用于并行编排多个AI编码智能体，使用git worktree隔离每个Agent的工作，支持任意CLI-based Agent（Claude Code/Codex/Grok/Gemini/Cline/Cursor及20+其他），内置版本控制、GitHub/Linear集成、SSH支持和移动端伴侣App。
+
+**ACP实现细节**：
+
+最新版本中：将ACP流量转换为共享时间线事件；让ACP连接拥有自己的Agent进程；支持OMP（OpenManus Protocol）回复和推理展示。
+
+### 多维度分析表
+
+| 维度 | 现状 | 评分 | 缺口 |
+|---|---|---|---|
+| **需求匹配** | 并行Agent管理，ACP协议完整实现 | ⭐⭐⭐ | 是IDE工具，无通讯平台输出端 |
+| **前端** | 桌面App（Electron类），移动端伴侣 | ⭐⭐⭐⭐ | — |
+| **后端** | TypeScript，本地运行，远程Server实验性 | ⭐⭐⭐ | Server 2.0 coming soon |
+| **数据** | git worktree隔离，本地存储 | ⭐⭐⭐ | 无中央数据库 |
+| **交互** | 多面板并行，GitHub Projects看板 | ⭐⭐⭐⭐ | — |
+| **逻辑** | Coordinator→Worker分发模式 | ⭐⭐⭐⭐ | 可参考总控→输入端分发模式 |
+| **组件** | ACP Connection + Agent Process管理 | ⭐⭐⭐⭐⭐ | 可参考ACP进程生命周期管理 |
+| **复用** | ACP进程管理代码可参考（TypeScript） | ⭐⭐⭐ | — |
+| **拓展** | 支持20+Agent，插件化 | ⭐⭐⭐⭐⭐ | — |
+| **性能** | git worktree并行隔离，性能优秀 | ⭐⭐⭐⭐ | — |
+| **配置** | 图形化配置，Agent订阅管理 | ⭐⭐⭐⭐ | — |
+| **知识库** | 无 | ⭐ | — |
+| **响应** | 实时流式回复，子Agent行显示 | ⭐⭐⭐⭐ | — |
+| **存储** | 本地文件系统 | ⭐⭐ | — |
+| **资源** | 桌面应用资源消耗适中 | ⭐⭐⭐ | — |
+
+### 可复用/参考清单
+
+```
+✅ ACP Connection生命周期管理（进程拥有权）→ 输入端进程管理
+✅ Coordinator→Worker分发模式 → 总控模式架构参考
+✅ ACP流量转时间线事件 → 消息溯源/Session查询功能
+✅ 20+Agent集成经验（命令参数、环境变量注入）
+⚠️ 桌面App架构不适合服务端路由平台
+❌ 无通讯平台输出端
+❌ 无多对多路由
+```
+
+---
+
+## 02-E：Hindsight (vectorize-io/hindsight)
+
+### 技术架构深度穿透
+
+Hindsight自称"会学习的Agent记忆"，是一个带有TypeScript、Go和Python客户端的记忆服务器，由Vectorize提供。
+
+截至2026年9月26日，Hindsight拥有约30,700个GitHub Stars，每一两周发布一次版本，最新版v0.10.1于9月21日发布，仍处于1.0之前阶段。
+
+**性能基准**：
+
+Vectorize的论文（2025年12月）报告LongMemEval准确率从全上下文基线的39%提升至使用Hindsight的83.6%，配合更大模型可达91.4%；后续基准测试报告在自有评测集上达到94.6%。
+
+### 多维度分析表
+
+| 维度 | 现状 | 评分 | 缺口 |
+|---|---|---|---|
+| **需求匹配** | 精准解决"知识库存储"需求 | ⭐⭐⭐⭐⭐ | 需要集成到路由控制平面 |
+| **前端** | API服务，无内置UI | ⭐⭐ | 需要在管理后台中展示记忆内容 |
+| **后端** | 记忆服务器，多语言客户端 | ⭐⭐⭐⭐⭐ | — |
+| **数据** | 语义记忆存储，observations机制 | ⭐⭐⭐⭐⭐ | — |
+| **交互** | 通过API查询记忆 | ⭐⭐⭐ | — |
+| **逻辑** | 自动记忆学习，mental models | ⭐⭐⭐⭐⭐ | — |
+| **组件** | retain/observations/mental-models三层 | ⭐⭐⭐⭐⭐ | — |
+| **复用** | 直接集成作为知识库模块 | ✅ | — |
+| **拓展** | 多语言客户端，API设计清晰 | ⭐⭐⭐⭐ | — |
+| **性能** | LongMemEval 83.6%→91.4%准确率 | ⭐⭐⭐⭐⭐ | — |
+| **配置** | 配置简单 | ⭐⭐⭐⭐ | — |
+| **知识库** | 核心功能，会随时间学习 | ⭐⭐⭐⭐⭐ | — |
+| **响应** | 查询延迟需测试 | ⭐⭐⭐⭐ | — |
+| **存储** | 向量+语义双层存储 | ⭐⭐⭐⭐⭐ | — |
+| **资源** | 独立服务，资源可控 | ⭐⭐⭐⭐ | — |
+
+### 可复用/参考清单
+
+```
+✅ 直接集成作为知识库模块（项目设计/目录结构图谱/上下文记忆）
+✅ Go客户端（与后端技术栈对齐）
+✅ observations API → 自动更新分身数据-loop
+✅ mental models → 上下文记忆优化
+⚠️ 仍处于v0.x阶段，需关注API稳定性
+```
+
+---
+
+## 02-F：BettaFish (666ghj/BettaFish)
+
+### 技术架构深度穿透
+
+BettaFish（微舆）是一个创新型多智能体舆情分析系统，帮助破除信息茧房，还原舆情原貌，预测未来走向，辅助决策。
+
+BettaFish设计了5类专业化Agent并融合了微调模型、统计模型等中间件，通过多模型协同工作确保分析深度和多维视角。
+
+**"论坛"协作机制**（与总控模式高度相关）：
+
+为不同Agent赋予独特的工具集与思维模式，引入辩论主持人模型，通过"论坛"机制进行链式思维碰撞与辩论，避免单一模型的思维局限，催生更高质量的集体智能。
+
+BettaFish基于纯Python模块化设计，实现轻量一键部署；支持公域与私域数据无缝融合。
+
+### 多维度分析表
+
+| 维度 | 现状 | 评分 | 缺口 |
+|---|---|---|---|
+| **需求匹配** | "论坛"机制与总控模式的"会议"概念高度对齐 | ⭐⭐⭐⭐ | 专为舆情分析，无通讯路由 |
+| **前端** | Streamlit多应用（QueryEngine/MediaEngine/InsightEngine） | ⭐⭐⭐ | — |
+| **后端** | Flask主应用 + Python多Agent | ⭐⭐⭐ | Python性能不如Go |
+| **数据** | 社媒数据爬取，30+平台覆盖 | ⭐⭐⭐⭐ | — |
+| **交互** | 对话式需求输入，自动分析 | ⭐⭐⭐⭐ | — |
+| **逻辑** | 辩论主持人→多Agent辩论→集体决策 | ⭐⭐⭐⭐⭐ | **总控模式"会议"机制最佳参考** |
+| **组件** | QueryEngine/MediaEngine/InsightEngine三引擎分离 | ⭐⭐⭐⭐ | — |
+| **复用** | "论坛"协作逻辑可作为总控模式会议机制参考 | ⭐⭐⭐⭐ | — |
+| **拓展** | 纯Python，易于扩展 | ⭐⭐⭐ | — |
+| **性能** | Python单进程，高并发场景有瓶颈 | ⭐⭐ | — |
+| **配置** | 多端口多应用配置 | ⭐⭐ | — |
+| **知识库** | 无结构化知识库 | ⭐⭐ | — |
+| **响应** | Streamlit实时刷新 | ⭐⭐⭐ | — |
+| **存储** | 本地文件，无持久化数据库 | ⭐⭐ | — |
+| **资源** | GPL-2.0 License，Docker支持 | ⭐⭐⭐ | GPL许可证需注意合规 |
+
+### 可复用/参考清单
+
+```
+✅ "论坛+辩论主持人"协作机制 → 总控模式会议逻辑设计参考
+✅ 多引擎分离架构 → 功能模块解耦参考
+⚠️ GPL-2.0 License，商用需注意
+⚠️ Python性能瓶颈，不适合高频通讯场景
+❌ 无ACP集成
+❌ 无通讯平台输出端
+```
+
+---
+
+# 03 — 技术缺口与补充方案
+
+## 3.1 核心缺口矩阵
+
+| 需求功能 | 现有最接近项目 | 覆盖度 | 补充方案 |
+|---|---|---|---|
+| 微信iLink API对接 | weclaw / wechat-acp | 90% | 直接复用，扩展多Bot管理 |
+| ACP stdio对接 | weclaw / wechat-acp / Orca | 85% | 复用适配器架构 |
+| HTTP/OpenAI API对接 | weclaw (HTTP模式) | 90% | 直接复用 |
+| **多对多路由控制平面** | 无 | 0% | **完全自研** |
+| **管理模式/通知模式/团队模式** | 无 | 0% | **完全自研** |
+| **总控模式（职业经理人）** | Paperclip(参考) + Pentagi(参考) + BettaFish(参考) | 30% | 参考三者，**核心自研** |
+| 飞书/QQ/钉钉/Discord/Telegram输出端 | 无 | 0% | **自研各平台Adapter** |
+| 定时任务 | 无 | 0% | 集成现有cron库（Go: robfig/cron） |
+| Session查询（按ID） | weclaw（Session Resume） | 40% | 扩展Session持久化 |
+| 知识库存储 | Hindsight（直接集成） | 85% | **集成Hindsight** |
+| 分身数据自动更新Loop | 无 | 0% | 参考Hindsight observations自研 |
+| 新开对话（/clear命令） | weclaw修复版 | 70% | 直接复用，扩展跨平台路由 |
+| 后台配置管理UI | Paperclip（参考） | 20% | **自研配置管理前端** |
+
+---
+
+# 04 — 自研架构方案（AideanFleet Core）
+
+## 4.1 系统总体架构
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                     AideanFleet Platform                         │
+│                                                                  │
+│  ┌─────────────────────────────────────────────────────────┐    │
+│  │                  Admin Console (Web UI)                   │    │
+│  │  路由规则配置 | Agent管理 | 模式切换 | Session查看 | 日志   │    │
+│  └────────────────────────┬────────────────────────────────┘    │
+│                           │ REST API / WebSocket                  │
+│  ┌─────────────────────────▼────────────────────────────────┐   │
+│  │              AideanFleet Core (Go)                         │   │
+│  │                                                            │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌────────────────┐  │   │
+│  │  │ Input        │  │  Router      │  │ Output         │  │   │
+│  │  │ Adapter Layer│  │  Control     │  │ Adapter Layer  │  │   │
+│  │  │              │  │  Plane       │  │                │  │   │
+│  │  │ ·ACP stdio   │──▶             │  │ ·WeChat iLink  │  │   │
+│  │  │ ·ACP HTTP    │  │ ·管理模式    │──▶·Feishu API    │  │   │
+│  │  │ ·CLI spawn   │  │ ·通知模式   │  │ ·QQ Bot API    │  │   │
+│  │  │ ·HTTP/OpenAI │  │ ·团队模式   │  │ ·DingTalk API  │  │   │
+│  │  └──────────────┘  │ ·总控模式   │  │ ·Discord API   │  │   │
+│  │                    └──────┬───────┘  │ ·Telegram API  │  │   │
+│  │                           │           └────────────────┘  │   │
+│  │  ┌────────────────────────▼─────────────────────────────┐ │   │
+│  │  │              Support Services                          │ │   │
+│  │  │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌─────────┐ │ │   │
+│  │  │  │ Session  │ │ Scheduler│ │Knowledge │ │Identity │ │ │   │
+│  │  │  │ Manager  │ │ (Cron)   │ │ Base     │ │ Loop    │ │ │   │
+│  │  │  │          │ │          │ │(Hindsight│ │(Auto    │ │ │   │
+│  │  │  └──────────┘ └──────────┘ │ /pgvec)  │ │Update)  │ │ │   │
+│  │  │                            └──────────┘ └─────────┘ │ │   │
+│  │  └──────────────────────────────────────────────────────┘ │   │
+│  └────────────────────────────────────────────────────────────┘   │
+│                                                                   │
+│  ┌────────────────────────────────────────────────────────────┐  │
+│  │                    Data Layer                               │  │
+│  │  PostgreSQL+pgvector | Redis (消息队列/Session缓存) | Neo4j │  │
+│  └────────────────────────────────────────────────────────────┘  │
+└──────────────────────────────────────────────────────────────────┘
+```
+
+## 4.2 核心数据模型
+
+### 输入端（Input Endpoint）
+
+```sql
+CREATE TABLE input_endpoints (
+    id          UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name        TEXT NOT NULL,
+    type        TEXT NOT NULL,  -- acp_stdio | acp_http | cli | http_openai
+    agent_name  TEXT NOT NULL,  -- claude | codex | cursor | coze | custom
+    command     TEXT,           -- 启动命令（ACP/CLI模式）
+    endpoint    TEXT,           -- HTTP模式端点
+    api_key     TEXT,           -- 加密存储
+    env_vars    JSONB DEFAULT '{}'::jsonb,
+    cwd         TEXT,           -- 工作目录
+    project_id  UUID REFERENCES projects(id),
+    status      TEXT DEFAULT 'idle', -- idle | running | error | paused
+    created_at  TIMESTAMPTZ DEFAULT NOW(),
+    updated_at  TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 输出端（Output Endpoint）
+
+```sql
+CREATE TABLE output_endpoints (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            TEXT NOT NULL,
+    platform        TEXT NOT NULL,  -- wechat | feishu | qq | dingtalk | discord | telegram
+    credentials     JSONB NOT NULL, -- 加密存储（token/bot_token/app_id等）
+    bot_qr_data     TEXT,           -- 微信QR登录凭证
+    status          TEXT DEFAULT 'disconnected',
+    last_heartbeat  TIMESTAMPTZ,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 路由规则（Routing Rule）
+
+```sql
+CREATE TABLE routing_rules (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            TEXT NOT NULL,
+    mode            TEXT NOT NULL,  -- management | notification | team | master_control
+    -- 管理模式：多输入→1输出
+    -- 通知模式：1输入→多输出
+    -- 团队模式：多输入↔多输出
+    -- 总控模式：团队模式+职业经理人Agent
+    input_ids       UUID[],         -- 输入端ID列表
+    output_ids      UUID[],         -- 输出端ID列表
+    project_id      UUID REFERENCES projects(id),
+    filter_rules    JSONB DEFAULT '{}'::jsonb,  -- 消息过滤规则
+    priority        INT DEFAULT 0,
+    enabled         BOOLEAN DEFAULT TRUE,
+    master_config   JSONB,          -- 总控模式配置（模型/skill/prompt）
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### Session管理
+
+```sql
+CREATE TABLE sessions (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_key     TEXT UNIQUE NOT NULL,   -- ACP session_id 或 CLI resume_id
+    input_id        UUID REFERENCES input_endpoints(id),
+    output_id       UUID REFERENCES output_endpoints(id),
+    routing_rule_id UUID REFERENCES routing_rules(id),
+    status          TEXT DEFAULT 'active',  -- active | completed | error
+    message_count   INT DEFAULT 0,
+    created_at      TIMESTAMPTZ DEFAULT NOW(),
+    last_active     TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE messages (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    session_id      UUID REFERENCES sessions(id),
+    direction       TEXT NOT NULL,   -- input→router | router→output | output→router | router→input
+    content         TEXT NOT NULL,
+    content_type    TEXT DEFAULT 'text',  -- text | image | file | audio | video
+    metadata        JSONB DEFAULT '{}'::jsonb,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+### 定时任务
+
+```sql
+CREATE TABLE scheduled_tasks (
+    id              UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    name            TEXT NOT NULL,
+    cron_expr       TEXT,               -- cron表达式（工作日/休息日扩展语法）
+    schedule_type   TEXT NOT NULL,      -- once | daily | weekly | monthly | workday | weekend
+    next_run        TIMESTAMPTZ,
+    last_run        TIMESTAMPTZ,
+    action_type     TEXT NOT NULL,      -- send_message | trigger_agent | new_session
+    action_config   JSONB NOT NULL,
+    routing_rule_id UUID REFERENCES routing_rules(id),
+    enabled         BOOLEAN DEFAULT TRUE,
+    created_at      TIMESTAMPTZ DEFAULT NOW()
+);
+```
+
+## 4.3 技术栈选型
+
+| 层级 | 技术选型 | 理由 |
+|---|---|---|
+| **核心后端** | Go 1.23+ | 高并发goroutine；参考weclaw/Pentagi验证；ACP stdio管理天然适合 |
+| **API层** | GraphQL (gqlgen) + REST | 实时订阅（WebSocket）+ 管理操作 |
+| **消息队列** | Redis Streams | 消息持久化、路由队列、Session缓存 |
+| **主数据库** | PostgreSQL 16 + pgvector | 路由规则、Session、消息历史、向量知识库 |
+| **知识图谱** | Neo4j + Graphiti (可选) | 高阶知识关系追踪（参考Pentagi） |
+| **知识库** | Hindsight（集成） | 长期记忆，会学习的记忆系统 |
+| **定时任务** | robfig/cron v3 | Go原生cron，支持扩展语法 |
+| **前端** | React 18 + TypeScript + Tailwind | 参考Paperclip/Pentagi UI设计 |
+| **部署** | Docker Compose | MIT自托管，一键启动 |
+| **进程管理** | Go os/exec + supervisord思路 | ACP Agent进程生命周期管理 |
+
+---
+
+# 05 — 四种模式详细设计
+
+## 5.1 管理模式（Management Mode）
+
+```
+输入端(N) ──┐
+输入端(N) ──┼──▶ [路由层] ──▶ 单一输出端(1)
+输入端(N) ──┘
+```
+
+**核心特性**：
+- 所有输入端的消息聚合到同一输出端
+- 输出端可向特定输入端发送消息（通过`@input_name`或路由命令）
+- 适合：ClawBot统一接收多个开发工具的消息
+- 消息标注来源：`[ClaudeCode] 任务完成：PR #123已创建`
+
+**执行流程**：
+```
+InputAdapter(N) → MessageBus → AggregationRouter → OutputAdapter(1)
+                               ↑
+                       消息标注来源端名称
+                       支持反向路由：output→指定input
+```
+
+## 5.2 通知模式（Notification Mode）
+
+```
+单一输入端(1) ──▶ [路由层] ──┬──▶ 输出端A
+                             ├──▶ 输出端B
+                             └──▶ 输出端N
+```
+
+**核心特性**：
+- 1个输入端群发到多个输出端
+- 每个输出端可有独立的消息格式化模板
+- 支持接收不同用户的回复（汇聚到同一输入端）
+- 适合：AI日报定时9点推送到所有订阅用户
+
+**定时推送集成**：
+```
+Scheduler(9:00 daily) → TriggerInputAdapter → BroadcastRouter → OutputAdapter(M)
+```
+
+## 5.3 团队模式（Team Mode）
+
+```
+输入端A ──┬──▶ [路由层] ──┬──▶ 输出端X（产品线1）
+输入端B ──┤             ├──▶ 输出端Y（产品线2）
+输入端C ──┤             └──▶ 输出端Z（管理端）
+输入端D ──┘
+```
+
+**核心特性**：
+- 多输入端 ↔ 多输出端，基于路由规则矩阵
+- 路由规则支持：按输入端标签、消息类型、项目ID、关键词
+- 场景示例：
+  - 开发工具消息 → 微信（产品线A）
+  - 运营工具消息 → QQ（产品线B）
+  - 审批/管理消息 → 飞书
+
+**路由规则矩阵**：
+
+```json
+{
+  "mode": "team",
+  "routing_matrix": [
+    {
+      "input_tags": ["dev", "monitor"],
+      "output_ids": ["wechat-bot-1"],
+      "project": "product-line-A"
+    },
+    {
+      "input_tags": ["ops", "analytics"],
+      "output_ids": ["qq-bot-1"],
+      "project": "product-line-B"
+    },
+    {
+      "input_tags": ["management", "approval"],
+      "output_ids": ["feishu-bot-1"]
+    }
+  ]
+}
+```
+
+## 5.4 总控模式（Master Control Mode）
+
+> **最复杂也是最核心的差异化功能**
+
+```
+┌─────────────────────────────────────────────────┐
+│              总控模式（Master Control）            │
+│                                                  │
+│  ┌──────────────────────────────────────────┐   │
+│  │         职业经理人 (Chief Manager Agent)   │   │
+│  │                                          │   │
+│  │  ·自定义LLM模型                           │   │
+│  │  ·可配置Skills（分析/决策/分发/汇报）      │   │
+│  │  ·随时接受用户直接对话                     │   │
+│  │  ·不中断正在执行的任务                     │   │
+│  └────────────┬─────────────────────────────┘   │
+│               │  委派/汇报                        │
+│    ┌──────────▼──────────────────────────────┐  │
+│    │         输入端团队（员工）                 │  │
+│    │  ClaudeCode  Codex  Cursor  OpenClaw    │  │
+│    │  （开发）  （分析）（推广） （运营）        │  │
+│    └────────────────────────┬────────────────┘  │
+│                             │  结果/汇报         │
+│    ┌────────────────────────▼────────────────┐  │
+│    │         输出端（汇报接收）                 │  │
+│    │  微信（日常） | 飞书（管理） | QQ（备用）  │  │
+│    └─────────────────────────────────────────┘  │
+└─────────────────────────────────────────────────┘
+```
+
+### 总控模式两种子模式：
+
+**子模式A：会议模式（需求分析）**
+```
+用户提出需求 → 总控Agent组织会议 → 各输入端扮演员工分析
+→ 总控明确需求、分析得失、统一意见 → 分配任务给指定输入端
+→ 输入端执行 → 结果回报总控 → 总控汇总后向输出端报告
+```
+
+**子模式B：把关模式（日常运行）**
+```
+各输入端消息到达 → 总控Agent接收 → 判断：
+  ├── 可直接回复 → 总控直接回复，不推送给输出端
+  ├── 需用户决策/重大事项 → 推送给输出端
+  └── 资源申请/审批 → 发送带审批卡片的消息到输出端
+```
+
+### 总控Agent配置
+
+```json
+{
+  "master_config": {
+    "model": "claude-3-5-sonnet-20241022",  // 可自定义
+    "provider": "anthropic",
+    "system_prompt": "你是一名经验丰富的职业经理人...",
+    "skills": [
+      "task_decomposition",    // 任务拆解
+      "consensus_building",    // 共识建立
+      "priority_assessment",   // 优先级评估
+      "escalation_decision",   // 升级决策
+      "report_generation"      // 汇报生成
+    ],
+    "escalation_rules": {
+      "keywords": ["严重", "紧急", "资源申请", "需要确认"],
+      "auto_reply_threshold": 0.8,  // 置信度阈值
+      "max_auto_handle_complexity": "medium"
+    },
+    "concurrent_sessions": true,  // 允许任务执行时随时对话
+    "timeout_fallback": "direct_passthrough"  // 超时降级直通
+  }
+}
+```
+
+---
+
+# 06 — 汇总决策表格
+
+## 6.1 开源项目能力矩阵总表
+
+| 项目 | Stars | License | ACP输入 | 多输入路由 | 多输出端 | 总控编排 | 知识库 | 定时任务 | 后台UI | 推荐用途 |
+|---|---|---|---|---|---|---|---|---|---|---|
+| **weclaw** | 高 | MIT | ✅完整 | ❌ | ❌仅微信 | ❌ | ❌ | ❌ | ❌ | ✅微信输出端复用 |
+| **wechat-acp** | 中 | MIT | ✅完整 | ❌ | ❌仅微信 | ❌ | ❌ | ❌ | ❌ | ✅微信输出端备选 |
+| **nightsailer/wechat-clawbot** | 中 | MIT | ✅完整 | ✅多Bot→多AI | ❌仅微信 | ❌ | ⚠️基础 | ❌ | ❌ | ✅iLink SDK参考 |
+| **Paperclip** | 高 | MIT | ✅适配器 | ✅org-chart | ❌无通讯端 | ✅参考 | ✅完整 | ⚠️基础 | ✅完整 | 📚架构参考 |
+| **Pentagi** | 25k+ | MIT | ⚠️无ACP | ✅多Agent | ❌无通讯端 | ✅完整 | ✅完整 | ❌ | ✅完整 | 📚总控架构参考 |
+| **Orca** | 94k+ | MIT | ✅完整 | ✅并行 | ❌无通讯端 | ✅Coordinator | ❌ | ❌ | ✅完整 | 📚ACP进程管理参考 |
+| **Hindsight** | 30k+ | MIT | ❌ | ❌ | ❌ | ❌ | ✅卓越 | ❌ | ❌ | ✅直接集成 |
+| **BettaFish** | 中 | GPL-2 | ❌ | ✅论坛机制 | ❌ | ⚠️论坛 | ❌ | ❌ | ⚠️Streamlit | 📚总控会议机制参考 |
+
+## 6.2 需求覆盖度矩阵
+
+| 需求功能 | 优先级 | 开源覆盖度 | 实现方案 | 预估复杂度 |
+|---|---|---|---|---|
+| 微信ClawBot输出端 | P0 | 90% (weclaw) | 复用+扩展 | 低 |
+| ACP stdio输入端 | P0 | 85% (weclaw/Orca) | 复用适配器架构 | 低 |
+| 管理模式路由 | P0 | 0% | 自研 | 中 |
+| 通知模式路由 | P0 | 0% | 自研 | 中 |
+| 团队模式路由 | P0 | 0% | 自研 | 高 |
+| 后台配置管理UI | P0 | 20% (参考Paperclip) | 自研前端 | 高 |
+| 飞书输出端 | P1 | 0% | 自研Adapter | 中 |
+| QQ Bot输出端 | P1 | 0% | 自研Adapter | 中 |
+| 定时任务 | P1 | 0% | robfig/cron集成 | 低 |
+| /clear新对话 | P1 | 70% (weclaw) | 扩展路由命令 | 低 |
+| Session查询 | P1 | 40% | 扩展Session持久化 | 中 |
+| 知识库存储 | P1 | 85% (Hindsight) | 直接集成 | 低 |
+| 总控模式（职业经理人） | P2 | 30% (参考三项目) | 核心自研 | 极高 |
+| 分身数据自动更新Loop | P2 | 0% | 自研 | 中 |
+| 钉钉/Discord/Telegram | P2 | 0% | 自研Adapter | 中 |
+
+## 6.3 技术选型决策表
+
+| 组件 | 选型 | 理由 | 备选 |
+|---|---|---|---|
+| 后端语言 | **Go** | 高并发goroutine；ACP进程管理；weclaw/Pentagi验证 | Node.js（wechat-acp路线） |
+| 数据库 | **PostgreSQL + pgvector** | 路由规则+Session+向量知识库一体 | MySQL（功能不足） |
+| 缓存/队列 | **Redis Streams** | 消息持久队列，Session缓存，防消息丢失 | RabbitMQ（偏重） |
+| 前端 | **React + TypeScript** | 生态成熟；参考Paperclip/Pentagi | Vue3（同等可选） |
+| 定时任务 | **robfig/cron v3** | Go生态标准cron库 | - |
+| 知识库 | **Hindsight** | 会学习的记忆，LongMemEval 83.6% | pgvector alone |
+| 部署 | **Docker Compose** | 自托管一键部署；参考Pentagi方案 | K8s（过重） |
+| API | **GraphQL + REST** | 实时订阅+管理操作双轨 | 纯REST |
+| 总控LLM | **可配置（默认Claude Sonnet）** | 用户可自定义模型 | - |
+
+## 6.4 风险矩阵
+
+| 风险 | 概率 | 影响 | 缓解方案 |
+|---|---|---|---|
+| 微信iLink API变更 | 中 | 高 | Adapter隔离，跟踪weclaw upstream |
+| ACP协议HTTP Transport升级 | 高 | 低（利好） | 预留传输层抽象接口 |
+| Hindsight API不稳定（v0.x） | 中 | 中 | 抽象知识库接口，可替换为pgvector |
+| 总控模式LLM响应超时 | 中 | 高 | 超时熔断+直通降级+消息持久化 |
+| 微信Bot扫码失效 | 高 | 高 | 自动重登录Loop + 告警推送 |
+| 多Bot高并发iLink限流 | 中 | 中 | 请求队列+指数退避重试 |
+| GPL-2污染（BettaFish） | 低 | 高 | 仅参考设计思路，不引入代码 |
+
+---
+
+# 07 — 实施路线图
+
+## Phase 1：核心通讯层（MVP）— 建议4周
+
+```
+Week 1: Go项目骨架 + PostgreSQL数据模型 + Redis队列
+Week 2: 微信iLink输出端Adapter（复用weclaw协议层）
+Week 3: ACP stdio/CLI 输入端Adapter
+Week 4: 管理模式路由（N→1） + 基础配置API
+```
+
+**验收标准**：ClaudeCode消息 → AideanFleet → 微信ClawBot 端到端通路打通
+
+## Phase 2：多模式路由层 — 建议4周
+
+```
+Week 5: 通知模式（1→N广播） + 飞书输出端Adapter
+Week 6: 团队模式路由矩阵 + QQ Bot Adapter
+Week 7: 后台配置管理Web UI（React）
+Week 8: Session管理 + 对话记录查询 + /clear命令路由
+```
+
+**验收标准**：三种模式配置、飞书/QQ双输出端、Session查询可用
+
+## Phase 3：增强功能层 — 建议4周
+
+```
+Week 9:  定时任务（Scheduler）+ 工作日/休息日判断
+Week 10: 知识库集成（Hindsight）+ 上下文记忆
+Week 11: 分身数据自动更新Loop + Discord/Telegram Adapter
+Week 12: 性能优化 + 监控（Grafana/VictoriaMetrics参考Pentagi）
+```
+
+## Phase 4：总控模式 — 建议6周
+
+```
+Week 13-14: 总控Agent核心（职业经理人Prompt工程 + LLM接入）
+Week 15-16: 会议模式（需求分析→任务分配流程）
+Week 17:    把关模式（升级决策规则引擎）
+Week 18:    总控随时对话（不中断执行任务的并发Session）
+```
+
+---
+
+## 📊 最终综合评估
+
+| 评估维度 | 评分 | 说明 |
+|---|---|---|
+| **需求理解完整度** | 已确认 | 5W1H三轮推理完成 |
+| **开源项目调研** | 已确认 | 6个项目全维度分析 |
+| **技术路线可行性** | 已确认 | Go+PostgreSQL+Redis技术栈成熟 |
+| **总控模式复杂度评估** | 部分确认 | LLM可靠性需实测验证 |
+| **Hindsight稳定性** | 待确认 | v0.x阶段，建议做接口隔离 |
+| **微信iLink API稳定性** | 部分确认 | 需跟踪upstream，做Adapter隔离 |
+| **总体进入开发阶段** | ✅ 允许 | MVP方案清晰，可启动Phase 1 |
+
+---
+
+> 💡 **报告结语**：AideanFleet的核心价值在于"路由控制平面"——这是当前ACP生态中真正的空白地带。微信iLink协议层（weclaw）、记忆系统（Hindsight）、编排架构参考（Paperclip/Pentagi）、并行管理参考（Orca）和会议协作参考（BettaFish）分别解决了不同子问题，但没有任何一个项目能解决多对多路由+多平台输出+总控编排的完整组合需求。混合策略（核心自研+选择性复用）是当前最优解。

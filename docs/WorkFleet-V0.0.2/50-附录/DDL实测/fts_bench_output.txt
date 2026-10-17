@@ -1,0 +1,6 @@
+N=200000 单事务批量写入 13.0s（15436 行/秒，含 FTS 触发器）
+FTS count 查询 30 次：p50=0.7ms p95=1.7ms max=1.8ms
+db 文件 62.6 MB（WAL 另计）
+复核（同库）：'登录超时' fts_count=5421（2.0ms）与 LIKE 全表扫描 5421（45.3ms）一致；top20 + bm25 rank 排序 8.4ms
+复核（同库）：'总控会议' fts_count=5688（0.8ms）与 LIKE 5688（43.8ms）一致；top20 + rank 7.2ms
+环境：sandbox Linux，Python 3.12 / SQLite 3.46.1，合成文本（20 个中文词随机拼接），非真实对话分布

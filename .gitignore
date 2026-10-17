@@ -1,0 +1,46 @@
+# 操作系统
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Python（50-附录/评分底稿、DDL实测 下的可复现脚本）
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+
+# Node（后续 TS/Node 实现阶段）
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# 密钥与本地环境
+.env
+.env.*
+*.pem
+*.key
+credentials.json
+
+# 日志与临时文件
+*.log
+*.tmp
+*.bak
+
+# SQLite 实测产物（DDL/FTS 基准跑出来的库文件不入库，输出 txt 入库）
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
