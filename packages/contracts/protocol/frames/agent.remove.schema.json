@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.remove.schema.json",
+  "title": "agent.remove",
+  "description": "帧 agent.remove，方向：relay→node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    }
+  },
+  "required": [
+    "agentId"
+  ]
+}

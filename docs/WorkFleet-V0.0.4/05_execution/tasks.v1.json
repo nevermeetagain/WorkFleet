@@ -1,0 +1,1716 @@
+[
+ {
+  "id": "001",
+  "slice": "S0",
+  "title": "Monorepo 脚手架、根白名单文件、AGENTS.md、Makefile 骨架",
+  "owner": "Agent-Guard",
+  "tier": "sonnect",
+  "dependsOn": [],
+  "blocks": [
+   "002",
+   "003",
+   "014"
+  ],
+  "size": "中",
+  "reqs": "REQ-C-001/007",
+  "allowedPaths": [
+   "package.json",
+   "pnpm-workspace.yaml",
+   "tsconfig.base.json",
+   "Makefile",
+   "AGENTS.md",
+   "README.md",
+   "CHANGELOG.md",
+   ".editorconfig",
+   ".env.example",
+   ".gitignore",
+   "apps/*/package.json",
+   "apps/*/tsconfig.json",
+   "apps/*/AGENTS.md"
+  ]
+ },
+ {
+  "id": "002",
+  "slice": "S0",
+  "title": "契约包构建：JSON Schema→TS 类型生成、ajv 校验器导出、示例校验测试、生成物漂移检查",
+  "owner": "Agent-Contract",
+  "tier": "sonnect",
+  "dependsOn": [
+   "001"
+  ],
+  "blocks": [
+   "004",
+   "007",
+   "008",
+   "009",
+   "014"
+  ],
+  "size": "中",
+  "reqs": "REQ-NF-009",
+  "allowedPaths": [
+   "packages/contracts/package.json",
+   "packages/contracts/scripts/**",
+   "packages/contracts/src/**",
+   "packages/contracts/generated/**",
+   "packages/contracts/test/**"
+  ]
+ },
+ {
+  "id": "003",
+  "slice": "S0",
+  "title": "迁移运行器（relay/node 共用）+ 应用 0001 + 仓储基类（Kysely）",
+  "owner": "Agent-Data",
+  "tier": "sonnect",
+  "dependsOn": [
+   "001"
+  ],
+  "blocks": [
+   "005",
+   "007"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-002",
+  "allowedPaths": [
+   "scripts/database/**",
+   "apps/relay/src/core/db/**",
+   "apps/node/src/core/db/**"
+  ]
+ },
+ {
+  "id": "004",
+  "slice": "S0",
+  "title": "中转启动层：Fastify、core（config/logging/errors 映射 error-codes）、/health",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "002"
+  ],
+  "blocks": [
+   "005"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-002",
+  "allowedPaths": [
+   "apps/relay/src/bootstrap/**",
+   "apps/relay/src/core/** (除 core/db)",
+   "apps/relay/src/modules/system/**"
+  ]
+ },
+ {
+  "id": "005",
+  "slice": "S0",
+  "title": "identity+tenancy：注册/登录/登出/me、会话 Cookie+CSRF、权限拦截器（permissions.json）",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "003",
+   "004"
+  ],
+  "blocks": [
+   "006",
+   "061"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-002/003",
+  "allowedPaths": [
+   "apps/relay/src/modules/identity/**",
+   "apps/relay/src/modules/tenancy/**",
+   "apps/relay/src/core/middleware/**",
+   "apps/relay/tests/**/identity/**",
+   "apps/relay/tests/**/tenancy/**"
+  ]
+ },
+ {
+  "id": "006",
+  "slice": "S0",
+  "title": "devices：配对码、claim、node-gateway WSS（hello/welcome/ack/ping、outbox 续传、去重）",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "005"
+  ],
+  "blocks": [
+   "010",
+   "026"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-001/002",
+  "allowedPaths": [
+   "apps/relay/src/modules/devices/**",
+   "apps/relay/src/modules/node-gateway/**",
+   "apps/relay/tests/**/devices/**",
+   "apps/relay/tests/**/node-gateway/**"
+  ]
+ },
+ {
+  "id": "007",
+  "slice": "S0",
+  "title": "节点启动层：单实例锁、relay-link（单中转）、`workfleet-node pair`、本地 outbox 续传",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "002",
+   "003"
+  ],
+  "blocks": [
+   "011"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-001",
+  "allowedPaths": [
+   "apps/node/src/bootstrap/**",
+   "apps/node/src/core/secrets/**（钥匙串最小抽象：get/set/delete，DPAPI/Keychain/libsecret/加密文件回退；161 扩展）",
+   "apps/node/src/core/** (除 core/db)",
+   "apps/node/src/modules/relay-link/**",
+   "apps/node/src/modules/system/**",
+   "apps/node/tests/**/relay-link/**"
+  ]
+ },
+ {
+  "id": "008",
+  "slice": "S0",
+  "title": "testkit：FakeAgent（ACP 录制回放）、FakeChannel、FakeRelay",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "002"
+  ],
+  "blocks": [
+   "011",
+   "105"
+  ],
+  "size": "中",
+  "reqs": "REQ-NF-009",
+  "allowedPaths": [
+   "packages/testkit/**"
+  ]
+ },
+ {
+  "id": "009",
+  "slice": "S0",
+  "title": "Web 骨架：路由、登录/注册/配对/设备列表页、data-access、UX 状态组件",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "002"
+  ],
+  "blocks": [
+   "012"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "apps/web/src/app/**",
+   "apps/web/src/pages/auth/**",
+   "apps/web/src/pages/devices/**",
+   "apps/web/src/features/auth/**",
+   "apps/web/src/features/devices/**",
+   "apps/web/src/components/**",
+   "apps/web/src/data-access/**",
+   "apps/web/src/lib/**",
+   "apps/web/src/styles/**",
+   "apps/web/src/i18n/**",
+   "apps/web/vite.config.ts",
+   "apps/web/index.html"
+  ]
+ },
+ {
+  "id": "010",
+  "slice": "S0",
+  "title": "中转 Web 渠道最小闭环：conversations/messages API、/api/v1/stream、agent.prompt/agent.output 转发",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "006"
+  ],
+  "blocks": [
+   "012",
+   "024",
+   "025",
+   "042"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "apps/relay/src/modules/conversations/**",
+   "apps/relay/src/modules/channels/infrastructure/adapters/web/**",
+   "apps/relay/tests/**/conversations/**"
+  ]
+ },
+ {
+  "id": "011",
+  "slice": "S0",
+  "title": "节点回声执行面：接收 agent.prompt，交给 FakeAgent，回 agent.output",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "007",
+   "008"
+  ],
+  "blocks": [
+   "013",
+   "021"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/application/echo/**",
+   "apps/node/src/modules/agents/index.ts"
+  ]
+ },
+ {
+  "id": "012",
+  "slice": "S0",
+  "title": "Web 聊天页（最小）：会话列表、消息流、发送框",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "009",
+   "010"
+  ],
+  "blocks": [
+   "013",
+   "027"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "apps/web/src/pages/chat/**",
+   "apps/web/src/features/chat/**"
+  ]
+ },
+ {
+  "id": "013",
+  "slice": "S0",
+  "title": "步行骨架 E2E：注册→配对→发消息→收到回声（Playwright + 真中转 + 真节点 + FakeAgent）",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "011",
+   "012"
+  ],
+  "blocks": [],
+  "size": "中",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "tests/e2e/**",
+   "playwright.config.ts"
+  ]
+ },
+ {
+  "id": "014",
+  "slice": "S0",
+  "title": "CI 守卫：dependency-cruiser、根污染、命名、gitleaks、契约测试、三平台矩阵",
+  "owner": "Agent-Guard",
+  "tier": "sonnect",
+  "dependsOn": [
+   "001",
+   "002"
+  ],
+  "blocks": [
+   "209"
+  ],
+  "size": "中",
+  "reqs": "REQ-NF-004/006/009",
+  "allowedPaths": [
+   ".github/**",
+   ".dependency-cruiser.cjs",
+   "eslint.config.js",
+   ".gitleaks.toml",
+   "Makefile（仅 guard/ci 目标段）"
+  ]
+ },
+ {
+  "id": "021",
+  "slice": "S1",
+  "title": "通用 ACP Host：spawn/initialize/session.new/prompt/cancel、进程树监管、权限请求→approval.request",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "011"
+  ],
+  "blocks": [
+   "022",
+   "023",
+   "064",
+   "085",
+   "086"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/** (除 adapters/specs、application/echo)",
+   "apps/node/tests/**/agents/**"
+  ]
+ },
+ {
+  "id": "022",
+  "slice": "S1",
+  "title": "InputAdapterSpec 加载与探测；Claude Code/Codex/Cursor 夹具录制与真机冒烟",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "021"
+  ],
+  "blocks": [
+   "030",
+   "081",
+   "082",
+   "083",
+   "084"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/specs/**",
+   "packages/testkit/fixtures/acp/{claude-code,codex,cursor}/**",
+   "docs/WorkFleet-V0.0.4/06_validation/evidence/EVD-022/**"
+  ]
+ },
+ {
+  "id": "023",
+  "slice": "S1",
+  "title": "sessions：转录 JSONL+索引、/clear（generation）、loadSession 恢复、history.query/result",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "021"
+  ],
+  "blocks": [
+   "030",
+   "063"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-019",
+  "allowedPaths": [
+   "apps/node/src/modules/sessions/**",
+   "apps/node/tests/**/sessions/**"
+  ]
+ },
+ {
+  "id": "024",
+  "slice": "S1",
+  "title": "指令解析器（im-commands.json）与 Web 渠道指令执行",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "010"
+  ],
+  "blocks": [
+   "028",
+   "044"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-018",
+  "allowedPaths": [
+   "apps/relay/src/modules/commands/**",
+   "apps/relay/tests/**/commands/**"
+  ]
+ },
+ {
+  "id": "025",
+  "slice": "S1",
+  "title": "历史检索 API：FTS trigram、displayId、nativeSessionId、节点转录拉取",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "010"
+  ],
+  "blocks": [],
+  "size": "中",
+  "reqs": "REQ-F-019",
+  "allowedPaths": [
+   "apps/relay/src/modules/conversations/application/history/**",
+   "apps/relay/src/modules/conversations/interfaces/http/history*"
+  ]
+ },
+ {
+  "id": "026",
+  "slice": "S1",
+  "title": "agents-registry：agents.sync、智能体 CRUD 下发与别名唯一",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "006"
+  ],
+  "blocks": [
+   "027",
+   "028"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/relay/src/modules/agents-registry/**"
+  ]
+ },
+ {
+  "id": "027",
+  "slice": "S1",
+  "title": "Web：智能体列表/表单（rjsf 按 configSchema）、聊天指令、历史页",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "012",
+   "026"
+  ],
+  "blocks": [
+   "029",
+   "046"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-007/018/019",
+  "allowedPaths": [
+   "apps/web/src/pages/agents/**",
+   "apps/web/src/features/agents/**",
+   "apps/web/src/pages/history/**",
+   "apps/web/src/features/history/**",
+   "apps/web/src/features/chat/commands/**"
+  ]
+ },
+ {
+  "id": "028",
+  "slice": "S1",
+  "title": "审批与 held（中转侧）：approval.request→待审批→decision→回节点；超时拒绝；held 队列",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "024",
+   "026"
+  ],
+  "blocks": [
+   "029",
+   "030",
+   "047"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-020",
+  "allowedPaths": [
+   "apps/relay/src/modules/approvals/**"
+  ]
+ },
+ {
+  "id": "029",
+  "slice": "S1",
+  "title": "Web 审批卡与收件箱",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "027",
+   "028"
+  ],
+  "blocks": [
+   "030"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-020",
+  "allowedPaths": [
+   "apps/web/src/features/approvals/**",
+   "apps/web/src/pages/approvals/**"
+  ]
+ },
+ {
+  "id": "030",
+  "slice": "S1",
+  "title": "S1 E2E：多轮、/clear、/history、审批、held",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "022",
+   "023",
+   "028",
+   "029"
+  ],
+  "blocks": [],
+  "size": "中",
+  "reqs": "REQ-F-018/019/020",
+  "allowedPaths": [
+   "tests/e2e/s1/**"
+  ]
+ },
+ {
+  "id": "041",
+  "slice": "S2",
+  "title": "微信 ClawBot 适配器：扫码登录、getupdates、sendmessage、context_token 持久化、额度预算器；真机验证 U-02/U-04",
+  "owner": "Agent-Channel",
+  "tier": "opus",
+  "dependsOn": [
+   "042"
+  ],
+  "blocks": [
+   "048",
+   "126"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-009",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/infrastructure/adapters/wechat-clawbot/**",
+   "docs/WorkFleet-V0.0.4/06_validation/evidence/EVD-041/**"
+  ]
+ },
+ {
+  "id": "042",
+  "slice": "S2",
+  "title": "channels 核心：ChannelAdapter 端口、注册表、capabilities、凭据加密、健康状态",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "010"
+  ],
+  "blocks": [
+   "041",
+   "043",
+   "045"
+  ],
+  "size": "中",
+  "reqs": "REQ-NF-008",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/** (除 infrastructure/adapters/*)"
+  ]
+ },
+ {
+  "id": "043",
+  "slice": "S2",
+  "title": "recipients：授权、/bind 识别我的账号、未授权固定提示",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "042"
+  ],
+  "blocks": [
+   "044"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-009/018",
+  "allowedPaths": [
+   "apps/relay/src/modules/recipients/**"
+  ]
+ },
+ {
+  "id": "044",
+  "slice": "S2",
+  "title": "routing 内核：管理模式、/use 焦点、@别名、引用回复溯源、dry-run",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "043",
+   "024"
+  ],
+  "blocks": [
+   "046",
+   "047",
+   "062",
+   "102"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-016/017",
+  "allowedPaths": [
+   "apps/relay/src/modules/routing/**"
+  ]
+ },
+ {
+  "id": "045",
+  "slice": "S2",
+  "title": "delivery：outbox 工作者、令牌桶、重试表、死信、IR 渲染降级、过程消息合并（DEC-017）",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "042"
+  ],
+  "blocks": [
+   "048",
+   "101",
+   "121",
+   "122",
+   "125",
+   "143",
+   "201"
+  ],
+  "size": "大",
+  "reqs": "REQ-NF-001/003",
+  "allowedPaths": [
+   "apps/relay/src/modules/delivery/**"
+  ]
+ },
+ {
+  "id": "046",
+  "slice": "S2",
+  "title": "Web：渠道页（扫码 UI）、接收人页、绑定编辑器 + dry-run",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "027",
+   "044"
+  ],
+  "blocks": [
+   "048",
+   "065"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-009/016",
+  "allowedPaths": [
+   "apps/web/src/pages/channels/**",
+   "apps/web/src/features/channels/**",
+   "apps/web/src/pages/routes/**",
+   "apps/web/src/features/routes/**",
+   "apps/web/src/features/recipients/**"
+  ]
+ },
+ {
+  "id": "047",
+  "slice": "S2",
+  "title": "IM 审批口令 Y{n}/N{n} 与无按钮渠道渲染",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "028",
+   "044"
+  ],
+  "blocks": [
+   "048"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-020",
+  "allowedPaths": [
+   "apps/relay/src/modules/approvals/application/text-codes/**",
+   "apps/relay/src/modules/commands/application/approval-codes/**"
+  ]
+ },
+ {
+  "id": "048",
+  "slice": "S2",
+  "title": "S2 E2E：FakeChannel(微信方言) 管理模式全链路",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "041",
+   "045",
+   "046",
+   "047"
+  ],
+  "blocks": [],
+  "size": "中",
+  "reqs": "REQ-F-009/016/017",
+  "allowedPaths": [
+   "tests/e2e/s2/**"
+  ]
+ },
+ {
+  "id": "061",
+  "slice": "S3",
+  "title": "projects：主/子项目树、深度≤3、overview 汇总",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "005"
+  ],
+  "blocks": [
+   "065",
+   "141"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-004",
+  "allowedPaths": [
+   "apps/relay/src/modules/projects/**"
+  ]
+ },
+ {
+  "id": "062",
+  "slice": "S3",
+  "title": "多设备：主设备、按设备路由、离线排队提示",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "044"
+  ],
+  "blocks": [
+   "065",
+   "067"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-005",
+  "allowedPaths": [
+   "apps/relay/src/modules/devices/application/primary/**",
+   "apps/relay/src/modules/routing/application/device-select/**"
+  ]
+ },
+ {
+  "id": "063",
+  "slice": "S3",
+  "title": "节点多中转：relay-link 管理、命名空间隔离、各自凭据",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "023"
+  ],
+  "blocks": [
+   "066",
+   "067",
+   "144",
+   "161"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-006",
+  "allowedPaths": [
+   "apps/node/src/modules/relay-link/**",
+   "apps/node/src/modules/agents/application/namespace/**"
+  ]
+ },
+ {
+  "id": "064",
+  "slice": "S3",
+  "title": "workspace-guard：写租约、自动 git worktree、AGENT_BUSY_WRITE_LEASE",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "021"
+  ],
+  "blocks": [
+   "067"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-032",
+  "allowedPaths": [
+   "apps/node/src/modules/workspace-guard/**"
+  ]
+ },
+ {
+  "id": "065",
+  "slice": "S3",
+  "title": "Web：项目树、设备页、跨项目视图",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "046",
+   "061",
+   "062"
+  ],
+  "blocks": [
+   "067",
+   "104"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-004/005",
+  "allowedPaths": [
+   "apps/web/src/pages/projects/**",
+   "apps/web/src/features/projects/**",
+   "apps/web/src/features/devices/primary/**"
+  ]
+ },
+ {
+  "id": "066",
+  "slice": "S3",
+  "title": "本机控制台（node 构建目标）：中转连接、适配器探测、诊断页",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "063"
+  ],
+  "blocks": [
+   "067",
+   "165"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-006",
+  "allowedPaths": [
+   "apps/web/src/targets/node/**",
+   "apps/web/src/features/local-*/**"
+  ]
+ },
+ {
+  "id": "067",
+  "slice": "S3",
+  "title": "S3 集成/E2E：两中转隔离、两设备路由、写冲突",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "062",
+   "063",
+   "064",
+   "065",
+   "066"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-005/006/032",
+  "allowedPaths": [
+   "tests/integration/s3/**",
+   "tests/e2e/s3/**"
+  ]
+ },
+ {
+  "id": "081",
+  "slice": "S4",
+  "title": "ACP 智能体组 A：Gemini CLI、Qwen Code、Kimi CLI、OpenCode（spec 实测+夹具）",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "022"
+  ],
+  "blocks": [
+   "087"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/specs/group-a/**",
+   "packages/testkit/fixtures/acp/{gemini-cli,qwen-code,kimi-cli,opencode}/**"
+  ]
+ },
+ {
+  "id": "082",
+  "slice": "S4",
+  "title": "ACP 智能体组 B：Goose、Cline、Qoder CLI、GitHub Copilot CLI（spec 实测+夹具）",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "022"
+  ],
+  "blocks": [
+   "087"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/specs/group-b/**",
+   "packages/testkit/fixtures/acp/{goose,cline,qoder-cli,github-copilot}/**"
+  ]
+ },
+ {
+  "id": "083",
+  "slice": "S4",
+  "title": "OpenClaw（openclaw acp）接入与历史范围标注（G15）",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "022"
+  ],
+  "blocks": [
+   "087"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/specs/openclaw/**",
+   "packages/testkit/fixtures/acp/openclaw/**"
+  ]
+ },
+ {
+  "id": "084",
+  "slice": "S4",
+  "title": "ZCode 实验适配器（zcode-acp-server / app-server 方言）",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "022"
+  ],
+  "blocks": [
+   "087"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-007",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/dialects/zcode/**",
+   "packages/testkit/fixtures/acp/zcode/**"
+  ]
+ },
+ {
+  "id": "085",
+  "slice": "S4",
+  "title": "Coze HTTP 适配器",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "021"
+  ],
+  "blocks": [
+   "087"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-008",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/coze/**"
+  ]
+ },
+ {
+  "id": "086",
+  "slice": "S4",
+  "title": "Webhook 输入（127.0.0.1:5102，HMAC 签名）",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "021"
+  ],
+  "blocks": [
+   "087"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-008",
+  "allowedPaths": [
+   "apps/node/src/modules/agents/infrastructure/webhook/**"
+  ]
+ },
+ {
+  "id": "087",
+  "slice": "S4",
+  "title": "S4 输入冒烟矩阵与证据汇总",
+  "owner": "Agent-QA",
+  "tier": "haiku",
+  "dependsOn": [
+   "081",
+   "082",
+   "083",
+   "084",
+   "085",
+   "086"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-007/008",
+  "allowedPaths": [
+   "docs/WorkFleet-V0.0.4/06_validation/evidence/EVD-087/**"
+  ]
+ },
+ {
+  "id": "101",
+  "slice": "S5",
+  "title": "飞书/Lark 适配器：长连接、卡片、按钮、卡片更新、双域",
+  "owner": "Agent-Channel",
+  "tier": "sonnect",
+  "dependsOn": [
+   "045"
+  ],
+  "blocks": [
+   "105",
+   "126"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-010",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/infrastructure/adapters/feishu/**"
+  ]
+ },
+ {
+  "id": "102",
+  "slice": "S5",
+  "title": "routing：通知模式（按发送人分会话）、团队模式（只到一个目标）、模式约束校验",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "044"
+  ],
+  "blocks": [
+   "103",
+   "142"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-016/017",
+  "allowedPaths": [
+   "apps/relay/src/modules/routing/application/modes/**"
+  ]
+ },
+ {
+  "id": "103",
+  "slice": "S5",
+  "title": "orchestration：汇总屏障（N 来源或超时、缺失标注）",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "102"
+  ],
+  "blocks": [
+   "104",
+   "105"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-021",
+  "allowedPaths": [
+   "apps/relay/src/modules/orchestration/**"
+  ]
+ },
+ {
+  "id": "104",
+  "slice": "S5",
+  "title": "Web：模式选择、屏障配置与状态",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "065",
+   "103"
+  ],
+  "blocks": [
+   "105",
+   "145"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-016/021",
+  "allowedPaths": [
+   "apps/web/src/features/routes/modes/**",
+   "apps/web/src/features/barriers/**"
+  ]
+ },
+ {
+  "id": "105",
+  "slice": "S5",
+  "title": "S5 E2E：通知/团队/屏障（FakeChannel 飞书方言）",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "008",
+   "101",
+   "103",
+   "104"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-010/016/021",
+  "allowedPaths": [
+   "tests/e2e/s5/**"
+  ]
+ },
+ {
+  "id": "121",
+  "slice": "S6",
+  "title": "QQ 官方机器人适配器",
+  "owner": "Agent-Channel",
+  "tier": "sonnect",
+  "dependsOn": [
+   "045"
+  ],
+  "blocks": [
+   "123"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-011",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/infrastructure/adapters/qq/**"
+  ]
+ },
+ {
+  "id": "122",
+  "slice": "S6",
+  "title": "钉钉 Stream 适配器",
+  "owner": "Agent-Channel",
+  "tier": "sonnect",
+  "dependsOn": [
+   "045"
+  ],
+  "blocks": [
+   "124"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-012",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/infrastructure/adapters/dingtalk/**"
+  ]
+ },
+ {
+  "id": "123",
+  "slice": "S6",
+  "title": "Telegram 适配器",
+  "owner": "Agent-Channel",
+  "tier": "sonnect",
+  "dependsOn": [
+   "121"
+  ],
+  "blocks": [
+   "126"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-013",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/infrastructure/adapters/telegram/**"
+  ]
+ },
+ {
+  "id": "124",
+  "slice": "S6",
+  "title": "Discord 适配器",
+  "owner": "Agent-Channel",
+  "tier": "sonnect",
+  "dependsOn": [
+   "122"
+  ],
+  "blocks": [
+   "126"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-014",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/infrastructure/adapters/discord/**"
+  ]
+ },
+ {
+  "id": "125",
+  "slice": "S6",
+  "title": "notifications：p0–p3、渠道健康告警、备用渠道",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "045"
+  ],
+  "blocks": [
+   "126",
+   "203",
+   "207"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-030",
+  "allowedPaths": [
+   "apps/relay/src/modules/notifications/**"
+  ]
+ },
+ {
+  "id": "126",
+  "slice": "S6",
+  "title": "渠道一致性测试套件（每个适配器跑同一套用例）",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "041",
+   "101",
+   "123",
+   "124",
+   "125"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-NF-008",
+  "allowedPaths": [
+   "tests/integration/channels/**"
+  ]
+ },
+ {
+  "id": "141",
+  "slice": "S7",
+  "title": "成员、邀请、项目范围（projectScope）",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "061"
+  ],
+  "blocks": [
+   "145"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-003",
+  "allowedPaths": [
+   "apps/relay/src/modules/tenancy/application/invitations/**",
+   "apps/relay/src/modules/tenancy/application/scope/**"
+  ]
+ },
+ {
+  "id": "142",
+  "slice": "S7",
+  "title": "permissions-filter：接收人×业务线×字段过滤与脱敏",
+  "owner": "Agent-Relay",
+  "tier": "opus",
+  "dependsOn": [
+   "102"
+  ],
+  "blocks": [
+   "145"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-027",
+  "allowedPaths": [
+   "apps/relay/src/modules/permissions-filter/**"
+  ]
+ },
+ {
+  "id": "143",
+  "slice": "S7",
+  "title": "audit：出站/管理审计、投递明细、死信重放",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "045"
+  ],
+  "blocks": [
+   "145",
+   "205"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-028",
+  "allowedPaths": [
+   "apps/relay/src/modules/audit/**"
+  ]
+ },
+ {
+  "id": "144",
+  "slice": "S7",
+  "title": "twin：采集（twin.capture）、节点存储、本机查看/修改/删除/导出",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "063"
+  ],
+  "blocks": [
+   "145"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-029",
+  "allowedPaths": [
+   "apps/node/src/modules/twin/**",
+   "apps/relay/src/modules/audit/application/twin-forward/**"
+  ]
+ },
+ {
+  "id": "145",
+  "slice": "S7",
+  "title": "Web：成员、过滤规则、审计、投递；本机分身页",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "104",
+   "141",
+   "142",
+   "143",
+   "144"
+  ],
+  "blocks": [
+   "146"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-003/027/028/029",
+  "allowedPaths": [
+   "apps/web/src/pages/members/**",
+   "apps/web/src/features/members/**",
+   "apps/web/src/features/filters/**",
+   "apps/web/src/pages/audit/**",
+   "apps/web/src/features/audit/**",
+   "apps/web/src/targets/node/twin/**"
+  ]
+ },
+ {
+  "id": "146",
+  "slice": "S7",
+  "title": "安全审查：越权矩阵测试、密钥扫描、提示注入标记",
+  "owner": "Agent-QA",
+  "tier": "opus",
+  "dependsOn": [
+   "145"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-NF-004",
+  "allowedPaths": [
+   "tests/integration/security/**",
+   "tests/integration/security/gitleaks-rules.toml（规则补充，由 TASK-014 的 .gitleaks.toml 引用）"
+  ]
+ },
+ {
+  "id": "161",
+  "slice": "S8",
+  "title": "models：钥匙串抽象（DPAPI/Keychain/libsecret/加密文件）、模型配置 CRUD、用量与费用",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "063"
+  ],
+  "blocks": [
+   "162",
+   "165",
+   "206"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-026",
+  "allowedPaths": [
+   "apps/node/src/modules/models/**",
+   "apps/node/src/core/secrets/**（扩展 007 的抽象）"
+  ]
+ },
+ {
+  "id": "162",
+  "slice": "S8",
+  "title": "provider 薄客户端：OpenAI 兼容 + Anthropic（流式、工具、usage）",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "161"
+  ],
+  "blocks": [
+   "163"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-026",
+  "allowedPaths": [
+   "apps/node/src/modules/models/infrastructure/providers/**"
+  ]
+ },
+ {
+  "id": "163",
+  "slice": "S8",
+  "title": "supervisor 把关分级（规则 + LLM，超限降级）与 supervisor 路由模式",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "162"
+  ],
+  "blocks": [
+   "164"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-022",
+  "allowedPaths": [
+   "apps/node/src/modules/supervisor/**"
+  ]
+ },
+ {
+  "id": "164",
+  "slice": "S8",
+  "title": "总控随时对话（/boss）与任务分派",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "163"
+  ],
+  "blocks": [
+   "166",
+   "181",
+   "182"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-023",
+  "allowedPaths": [
+   "apps/node/src/modules/supervisor/application/chat/**",
+   "apps/node/src/modules/supervisor/application/dispatch/**"
+  ]
+ },
+ {
+  "id": "165",
+  "slice": "S8",
+  "title": "Web 本机：模型配置、用量看板、总控设置",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "066",
+   "161"
+  ],
+  "blocks": [
+   "166",
+   "183"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-026",
+  "allowedPaths": [
+   "apps/web/src/targets/node/models/**",
+   "apps/web/src/targets/node/supervisor/**"
+  ]
+ },
+ {
+  "id": "166",
+  "slice": "S8",
+  "title": "S8 E2E：把关四分级、超限降级、随时对话不打断",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "164",
+   "165"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-022/023/026",
+  "allowedPaths": [
+   "tests/e2e/s8/**"
+  ]
+ },
+ {
+  "id": "181",
+  "slice": "S9",
+  "title": "meetings 引擎：轮次、发言、纪要、决策、全员或超时",
+  "owner": "Agent-Node",
+  "tier": "opus",
+  "dependsOn": [
+   "164"
+  ],
+  "blocks": [
+   "183",
+   "184"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-024",
+  "allowedPaths": [
+   "apps/node/src/modules/meetings/**"
+  ]
+ },
+ {
+  "id": "182",
+  "slice": "S9",
+  "title": "导入任务清单（task-template 解析）与依赖顺序分派",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "164"
+  ],
+  "blocks": [
+   "184"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-025",
+  "allowedPaths": [
+   "apps/node/src/modules/supervisor/application/import/**"
+  ]
+ },
+ {
+  "id": "183",
+  "slice": "S9",
+  "title": "Web：会议回放与任务看板",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "165",
+   "181"
+  ],
+  "blocks": [
+   "184"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-024/025",
+  "allowedPaths": [
+   "apps/web/src/features/meetings/**",
+   "apps/web/src/features/tasks/**"
+  ]
+ },
+ {
+  "id": "184",
+  "slice": "S9",
+  "title": "S9 E2E：会议与导入分派",
+  "owner": "Agent-QA",
+  "tier": "sonnect",
+  "dependsOn": [
+   "181",
+   "182",
+   "183"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-024/025",
+  "allowedPaths": [
+   "tests/e2e/s9/**"
+  ]
+ },
+ {
+  "id": "201",
+  "slice": "S10",
+  "title": "急停（中转）：/stop all、EMERGENCY_STOPPED、恢复",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "045"
+  ],
+  "blocks": [
+   "202"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-033",
+  "allowedPaths": [
+   "apps/relay/src/modules/system/application/emergency/**"
+  ]
+ },
+ {
+  "id": "202",
+  "slice": "S10",
+  "title": "急停（节点）：冻结所有会话与队列、恢复",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "201"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-033",
+  "allowedPaths": [
+   "apps/node/src/modules/system/application/emergency/**"
+  ]
+ },
+ {
+  "id": "203",
+  "slice": "S10",
+  "title": "Web Push 发送（VAPID）与订阅管理（中转）",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "125"
+  ],
+  "blocks": [
+   "204"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "apps/relay/src/modules/notifications/infrastructure/webpush/**"
+  ]
+ },
+ {
+  "id": "204",
+  "slice": "S10",
+  "title": "PWA：manifest、service worker、订阅 UI",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "203"
+  ],
+  "blocks": [
+   "208"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-015",
+  "allowedPaths": [
+   "apps/web/src/pwa/**",
+   "apps/web/public/manifest.webmanifest"
+  ]
+ },
+ {
+  "id": "205",
+  "slice": "S10",
+  "title": "配置导出/导入（中转，YAML，不含密钥，dry-run 差异）",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "143"
+  ],
+  "blocks": [],
+  "size": "中",
+  "reqs": "REQ-F-034",
+  "allowedPaths": [
+   "apps/relay/src/modules/system/application/config-io/**"
+  ]
+ },
+ {
+  "id": "206",
+  "slice": "S10",
+  "title": "节点 doctor 与恢复密钥导出/导入",
+  "owner": "Agent-Node",
+  "tier": "sonnect",
+  "dependsOn": [
+   "161"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-034/035",
+  "allowedPaths": [
+   "apps/node/src/modules/system/application/doctor/**",
+   "apps/node/src/modules/system/application/recovery/**"
+  ]
+ },
+ {
+  "id": "207",
+  "slice": "S10",
+  "title": "Bot 唯一消费者检测与告警",
+  "owner": "Agent-Relay",
+  "tier": "sonnect",
+  "dependsOn": [
+   "125"
+  ],
+  "blocks": [
+   "208"
+  ],
+  "size": "小",
+  "reqs": "REQ-F-031",
+  "allowedPaths": [
+   "apps/relay/src/modules/channels/application/identity-guard/**"
+  ]
+ },
+ {
+  "id": "208",
+  "slice": "S10",
+  "title": "画像向导 P1/P2（Web）",
+  "owner": "Agent-App",
+  "tier": "sonnect",
+  "dependsOn": [
+   "204",
+   "207"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "中",
+  "reqs": "REQ-F-031",
+  "allowedPaths": [
+   "apps/web/src/features/onboarding/**"
+  ]
+ },
+ {
+  "id": "209",
+  "slice": "S10",
+  "title": "安装与部署：三平台节点安装/自启、中转 systemd + Caddy 脚本",
+  "owner": "Agent-Guard",
+  "tier": "sonnect",
+  "dependsOn": [
+   "014"
+  ],
+  "blocks": [
+   "210"
+  ],
+  "size": "大",
+  "reqs": "REQ-F-001",
+  "allowedPaths": [
+   "infra/**",
+   "scripts/setup/**",
+   "scripts/release/**"
+  ]
+ },
+ {
+  "id": "210",
+  "slice": "S10",
+  "title": "v1 验收回归与基线指标测量",
+  "owner": "Agent-QA",
+  "tier": "opus",
+  "dependsOn": [
+   "067",
+   "087",
+   "105",
+   "126",
+   "146",
+   "166",
+   "184",
+   "202",
+   "206",
+   "208",
+   "209"
+  ],
+  "blocks": [
+   "211"
+  ],
+  "size": "大",
+  "reqs": "REQ-NF-001/002",
+  "allowedPaths": [
+   "tests/e2e/regression/**",
+   "docs/WorkFleet-V0.0.4/06_validation/**"
+  ]
+ },
+ {
+  "id": "211",
+  "slice": "S10",
+  "title": "文档同步：用户指南、project-map、task-index 状态",
+  "owner": "Agent-Docs",
+  "tier": "haiku",
+  "dependsOn": [
+   "210"
+  ],
+  "blocks": [],
+  "size": "小",
+  "reqs": "REQ-C-007",
+  "allowedPaths": [
+   "docs/**（不含 06_validation/evidence）"
+  ]
+ }
+]

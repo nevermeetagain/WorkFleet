@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/adapters/channel-capabilities.schema.json",
+  "title": "channel-capabilities",
+  "description": "渠道能力声明（DEC-008）；核心按能力降级，不写渠道特判",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "inboundMode": {
+      "type": "string",
+      "enum": [
+        "long_poll",
+        "websocket",
+        "stream",
+        "webhook",
+        "internal"
+      ]
+    },
+    "editMessage": {
+      "type": "boolean"
+    },
+    "cards": {
+      "type": "boolean"
+    },
+    "buttons": {
+      "type": "boolean"
+    },
+    "markdown": {
+      "type": "boolean"
+    },
+    "threads": {
+      "type": "boolean"
+    },
+    "quoteReply": {
+      "type": "boolean"
+    },
+    "groupChat": {
+      "type": "boolean"
+    },
+    "broadcastChannel": {
+      "type": "boolean"
+    },
+    "proactiveDirectMessages": {
+      "type": "boolean"
+    },
+    "proactiveQuota": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "windowSec": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "maxMessagesPerInbound": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "tokenTtlSec": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "rateLimitPerSec": {
+      "type": "number",
+      "minimum": 0
+    },
+    "maxMessageChars": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "attachments": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "inboundMode",
+    "editMessage",
+    "cards",
+    "buttons",
+    "markdown",
+    "threads",
+    "quoteReply",
+    "groupChat",
+    "broadcastChannel",
+    "proactiveDirectMessages",
+    "proactiveQuota",
+    "rateLimitPerSec",
+    "maxMessageChars",
+    "attachments"
+  ]
+}

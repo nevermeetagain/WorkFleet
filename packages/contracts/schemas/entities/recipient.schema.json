@@ -1,0 +1,87 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/recipient.schema.json",
+  "title": "recipient",
+  "description": "渠道上的接收/发送身份",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/recipientId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "channelId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/channelId"
+    },
+    "platformId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 256
+    },
+    "scope": {
+      "type": "string",
+      "enum": [
+        "direct",
+        "group",
+        "channel"
+      ]
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "linkedUserId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "authorized": {
+      "type": "boolean"
+    },
+    "quietHours": {
+      "type": [
+        "object",
+        "null"
+      ],
+      "properties": {
+        "start": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "end": {
+          "type": "string",
+          "pattern": "^\\d{2}:\\d{2}$"
+        },
+        "tz": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "additionalProperties": false
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "channelId",
+    "platformId",
+    "scope",
+    "displayName",
+    "linkedUserId",
+    "authorized",
+    "quietHours",
+    "createdAt"
+  ]
+}

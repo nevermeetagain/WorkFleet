@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.clear.schema.json",
+  "title": "agent.clear",
+  "description": "帧 agent.clear，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "newGeneration": {
+      "type": "integer",
+      "minimum": 2
+    }
+  },
+  "required": [
+    "agentId",
+    "conversationId",
+    "newGeneration"
+  ]
+}

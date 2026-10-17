@@ -1,0 +1,125 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/approval.schema.json",
+  "title": "approval",
+  "description": "审批；shortCode 用于 Y{n}/N{n}；超时默认拒绝；high 风险仅 admin 或设备所有者可批",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/approvalId"
+    },
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "shortCode": {
+      "type": "integer",
+      "minimum": 0,
+      "maximum": 99,
+      "description": "0=待中转分配"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "tool_permission",
+        "resource_request",
+        "major_decision",
+        "supervisor_escalation"
+      ]
+    },
+    "summary": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "risk": {
+      "type": "string",
+      "enum": [
+        "low",
+        "medium",
+        "high"
+      ]
+    },
+    "options": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "optionId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "label": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          },
+          "kind": {
+            "type": "string",
+            "enum": [
+              "allow_once",
+              "allow_always",
+              "reject",
+              "reject_always",
+              "custom"
+            ]
+          }
+        },
+        "required": [
+          "optionId",
+          "label",
+          "kind"
+        ]
+      }
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "pending",
+        "approved",
+        "rejected",
+        "expired",
+        "cancelled"
+      ]
+    },
+    "decidedBy": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+        },
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/recipientId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "expiresAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "conversationId",
+    "agentId",
+    "shortCode",
+    "kind",
+    "summary",
+    "risk",
+    "options",
+    "status",
+    "decidedBy",
+    "expiresAt",
+    "createdAt"
+  ]
+}

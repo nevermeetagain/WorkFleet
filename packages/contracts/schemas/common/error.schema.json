@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json",
+  "title": "error",
+  "description": "统一错误体；code 取自 errors/error-codes.json",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "error": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]+$"
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 500
+        },
+        "details": {
+          "type": "object"
+        },
+        "traceId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/traceId"
+        },
+        "retryable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "code",
+        "message",
+        "traceId",
+        "retryable"
+      ]
+    }
+  },
+  "required": [
+    "error"
+  ]
+}

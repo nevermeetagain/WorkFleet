@@ -1,0 +1,20 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.cancel.schema.json",
+  "title": "agent.cancel",
+  "description": "帧 agent.cancel，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    }
+  },
+  "required": [
+    "agentId",
+    "conversationId"
+  ]
+}

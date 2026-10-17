@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/user.schema.json",
+  "title": "user",
+  "description": "用户；密码哈希不在任何契约中出现",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+    },
+    "email": {
+      "type": "string",
+      "format": "email",
+      "maxLength": 254
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "locale": {
+      "type": "string",
+      "enum": [
+        "zh-CN",
+        "en-US"
+      ]
+    },
+    "totpEnabled": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "email",
+    "displayName",
+    "locale",
+    "totpEnabled",
+    "createdAt"
+  ]
+}

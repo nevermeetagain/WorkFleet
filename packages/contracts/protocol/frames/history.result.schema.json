@@ -1,0 +1,25 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/history.result.schema.json",
+  "title": "history.result",
+  "description": "帧 history.result，方向：node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "requestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "entries": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/transcript-entry.schema.json"
+      }
+    }
+  },
+  "required": [
+    "requestId",
+    "entries"
+  ]
+}

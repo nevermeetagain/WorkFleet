@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/membership.schema.json",
+  "title": "membership",
+  "description": "成员与角色",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/membershipId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "userId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+    },
+    "role": {
+      "$ref": "https://workfleet.dev/contracts/v1/identity/role.schema.json"
+    },
+    "projectScope": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/projectId"
+      },
+      "description": "空数组 = 全部项目"
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "userId",
+    "role",
+    "projectScope",
+    "createdAt",
+    "version"
+  ]
+}

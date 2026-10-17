@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/twin.capture.schema.json",
+  "title": "twin.capture",
+  "description": "帧 twin.capture，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "event": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/twin-event.schema.json"
+    }
+  },
+  "required": [
+    "event"
+  ]
+}

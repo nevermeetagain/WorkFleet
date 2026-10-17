@@ -1,0 +1,261 @@
+{
+  "$comment": "唯一权限矩阵；契约测试逐格验证（REQ-F-003）。approval.decide_high 另允许设备所有者（ownerOfDevice 规则）。项目范围：membership.projectScope 非空时，所有 project/agent/route/conversation 类动作只作用于范围内项目。 跨组织访问一律 404（不泄露存在性），REQ-F-002 已同步。",
+  "version": 1,
+  "roles": [
+    "admin",
+    "operator",
+    "viewer"
+  ],
+  "actions": [
+    "tenant.read",
+    "tenant.update",
+    "member.invite",
+    "member.update_role",
+    "member.remove",
+    "device.pair",
+    "device.read",
+    "device.revoke",
+    "device.set_primary",
+    "project.read",
+    "project.write",
+    "agent.read",
+    "agent.write",
+    "agent.prompt",
+    "agent.stop",
+    "channel.read",
+    "channel.write",
+    "channel.bind_credential",
+    "recipient.read",
+    "recipient.authorize",
+    "route.read",
+    "route.write",
+    "route.dry_run",
+    "conversation.read",
+    "conversation.write",
+    "history.search",
+    "approval.decide_low",
+    "approval.decide_high",
+    "filter.read",
+    "filter.write",
+    "audit.read",
+    "emergency.stop_all",
+    "emergency.resume",
+    "config.export",
+    "config.import",
+    "notification.subscribe"
+  ],
+  "matrix": {
+    "tenant.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "tenant.update": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "member.invite": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "member.update_role": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "member.remove": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "device.pair": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "device.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "device.revoke": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "device.set_primary": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "project.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "project.write": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "agent.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "agent.write": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "agent.prompt": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "agent.stop": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "channel.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "channel.write": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "channel.bind_credential": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "recipient.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "recipient.authorize": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "route.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "route.write": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "route.dry_run": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "conversation.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "conversation.write": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "history.search": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "approval.decide_low": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "approval.decide_high": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "filter.read": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    },
+    "filter.write": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "audit.read": {
+      "admin": true,
+      "operator": false,
+      "viewer": true
+    },
+    "emergency.stop_all": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "emergency.resume": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "config.export": {
+      "admin": true,
+      "operator": true,
+      "viewer": false
+    },
+    "config.import": {
+      "admin": true,
+      "operator": false,
+      "viewer": false
+    },
+    "notification.subscribe": {
+      "admin": true,
+      "operator": true,
+      "viewer": true
+    }
+  },
+  "extraRules": [
+    {
+      "action": "approval.decide_high",
+      "allowIf": "principal.userId == device.ownerUserId"
+    },
+    {
+      "action": "device.revoke",
+      "allowIf": "principal.userId == device.ownerUserId"
+    }
+  ],
+  "forbiddenPaths": [
+    {
+      "desc": "任何角色不得跨 tenant 访问",
+      "check": "resource.tenantId == principal.tenantId else 404 NOT_FOUND（不泄露存在性）"
+    },
+    {
+      "desc": "viewer 不得调用任何非 GET 端点（notification.subscribe 除外）",
+      "check": "403 FORBIDDEN"
+    },
+    {
+      "desc": "中转任何端点不得返回或接收模型 Key",
+      "check": "schema 中不存在该字段；secret-scan 测试"
+    },
+    {
+      "desc": "设备令牌只能调用 node-gateway，不能调用 Web API",
+      "check": "401 UNAUTHENTICATED"
+    },
+    {
+      "desc": "IM 未授权发送者不得触发路由",
+      "check": "recipient.authorized=false → 只回固定提示"
+    }
+  ]
+}

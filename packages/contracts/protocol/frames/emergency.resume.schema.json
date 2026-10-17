@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/emergency.resume.schema.json",
+  "title": "emergency.resume",
+  "description": "帧 emergency.resume，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {},
+  "required": []
+}

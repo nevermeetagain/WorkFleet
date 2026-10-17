@@ -1,0 +1,525 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/envelope.schema.json",
+  "title": "envelope",
+  "description": "中转↔节点 WSS 帧（ADR-005）。每方向 seq 单调递增；ack/ping/hello/welcome 不占 seq（seq=0）。接收方按 idempotencyKey 去重；重连后从对端 lastAcked+1 续传。单帧 ≤ 1 MiB。",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "v": {
+      "type": "integer",
+      "minimum": 1,
+      "description": "协议版本；hello/welcome 协商，不支持则 error PROTOCOL_VERSION_UNSUPPORTED"
+    },
+    "seq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "type": {
+      "type": "string",
+      "enum": [
+        "hello",
+        "welcome",
+        "ack",
+        "ping",
+        "agent.prompt",
+        "agent.cancel",
+        "agent.clear",
+        "agent.output",
+        "agent.status",
+        "approval.request",
+        "approval.decision",
+        "agents.sync",
+        "history.query",
+        "history.result",
+        "emergency.stop",
+        "emergency.resume",
+        "twin.capture",
+        "barrier.submit",
+        "error",
+        "agent.upsert",
+        "agent.remove",
+        "route.sync",
+        "approval.cancel",
+        "approval.assigned",
+        "conversation.open",
+        "conversation.opened",
+        "adapters.detected",
+        "device.token_rotated"
+      ]
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "traceId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/traceId"
+    },
+    "sentAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "payload": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "v",
+    "seq",
+    "type",
+    "idempotencyKey",
+    "traceId",
+    "sentAt",
+    "payload"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "hello"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/hello.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "welcome"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/welcome.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "ack"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/ack.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "ping"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/ping.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.prompt"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.prompt.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.cancel"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.cancel.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.clear"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.clear.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.output"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.output.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.status"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.status.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "approval.request"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/approval.request.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "approval.decision"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/approval.decision.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agents.sync"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agents.sync.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "history.query"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/history.query.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "history.result"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/history.result.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "emergency.stop"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/emergency.stop.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "emergency.resume"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/emergency.resume.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "twin.capture"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/twin.capture.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "barrier.submit"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/barrier.submit.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "error"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/error.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.upsert"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.upsert.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "agent.remove"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/agent.remove.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "route.sync"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/route.sync.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "approval.cancel"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/approval.cancel.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "approval.assigned"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/approval.assigned.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "conversation.open"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/conversation.open.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "conversation.opened"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/conversation.opened.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "adapters.detected"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/adapters.detected.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "device.token_rotated"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "payload": {
+            "$ref": "https://workfleet.dev/contracts/v1/protocol/frames/device.token_rotated.schema.json"
+          }
+        }
+      }
+    }
+  ]
+}

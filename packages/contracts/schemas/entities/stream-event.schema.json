@@ -1,0 +1,71 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/stream-event.schema.json",
+  "title": "stream-event",
+  "description": "GET /api/v1/stream（WebSocket）下行事件；上行只允许 {type:'subscribe'|'unsubscribe', conversationId}",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "type": {
+      "enum": [
+        "message.created",
+        "message.updated",
+        "conversation.updated",
+        "approval.created",
+        "approval.decided",
+        "agent.status",
+        "device.status",
+        "notification",
+        "emergency.changed"
+      ]
+    },
+    "at": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "data": {
+      "type": "object"
+    }
+  },
+  "required": [
+    "type",
+    "at",
+    "data"
+  ],
+  "allOf": [
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "enum": [
+              "message.created",
+              "message.updated"
+            ]
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message.schema.json"
+          }
+        }
+      }
+    },
+    {
+      "if": {
+        "properties": {
+          "type": {
+            "const": "approval.created"
+          }
+        }
+      },
+      "then": {
+        "properties": {
+          "data": {
+            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/approval.schema.json"
+          }
+        }
+      }
+    }
+  ]
+}

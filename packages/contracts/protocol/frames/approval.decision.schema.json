@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/approval.decision.schema.json",
+  "title": "approval.decision",
+  "description": "帧 approval.decision，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "approvalId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/approvalId"
+    },
+    "optionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "decidedBy": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "approvalId",
+    "optionId",
+    "decidedBy"
+  ]
+}

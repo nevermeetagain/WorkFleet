@@ -1,0 +1,88 @@
+{
+  "$comment": "IM 与 Web 指令唯一源（REQ-F-018）；所有渠道行为一致。未授权发送者只能使用 /bind。 /mirror（DEC-011）推迟到 v2（BL-012）。",
+  "version": 1,
+  "prefixes": [
+    "/",
+    "／"
+  ],
+  "commands": [
+    {
+      "syntax": "/help",
+      "args": [],
+      "desc": "列出可用指令",
+      "permission": "conversation.read"
+    },
+    {
+      "syntax": "/list",
+      "args": [],
+      "desc": "列出当前账号可用的智能体（别名、设备、项目、状态）",
+      "permission": "agent.read"
+    },
+    {
+      "syntax": "/use",
+      "args": "<alias>",
+      "desc": "把当前对话的默认目标切到该智能体",
+      "permission": "agent.prompt"
+    },
+    {
+      "syntax": "/@alias",
+      "args": "<text>",
+      "desc": "把这一条发给指定智能体（写法 @z1 文本）",
+      "permission": "agent.prompt"
+    },
+    {
+      "syntax": "/clear",
+      "args": "[alias]",
+      "desc": "对当前（或指定）智能体新开对话：generation+1，旧记录保留",
+      "permission": "conversation.write"
+    },
+    {
+      "syntax": "/stop",
+      "args": "[alias]",
+      "desc": "停止当前（或指定）智能体正在执行的轮次（ACP session/cancel）",
+      "permission": "agent.stop"
+    },
+    {
+      "syntax": "/stop all",
+      "args": [],
+      "desc": "急停：冻结本账号所有智能体与出站（G9）",
+      "permission": "emergency.stop_all"
+    },
+    {
+      "syntax": "/status",
+      "args": "[alias]",
+      "desc": "查看智能体状态、排队数、待审批",
+      "permission": "agent.read"
+    },
+    {
+      "syntax": "/history",
+      "args": "[displayId|resumeId] [n]",
+      "desc": "查看会话最近 n 条（默认 10）",
+      "permission": "history.search"
+    },
+    {
+      "syntax": "/bind",
+      "args": [],
+      "desc": "在 IM 内发起“识别我的账号”，返回 6 位码到控制台确认",
+      "permission": "recipient.authorize"
+    },
+    {
+      "syntax": "Y{n} / N{n}",
+      "args": [],
+      "desc": "批准 / 拒绝 第 n 号审批",
+      "permission": "approval.decide_low"
+    },
+    {
+      "syntax": "/boss",
+      "args": "<text>",
+      "desc": "总控模式：直接与总控对话（不打断任务）",
+      "permission": "agent.prompt"
+    },
+    {
+      "syntax": "YY{n} / NN{n}",
+      "args": [],
+      "desc": "总是允许 / 总是拒绝（对应 allow_always / reject_always，无按钮渠道）",
+      "permission": "approval.decide_low"
+    }
+  ]
+}

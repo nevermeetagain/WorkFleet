@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/adapters/input-adapter-spec.schema.json",
+  "title": "input-adapter-spec",
+  "description": "输入适配器表的一行（DEC-007/055）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "adapterId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]{1,63}$"
+    },
+    "displayName": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "family": {
+      "type": "string",
+      "enum": [
+        "acp",
+        "coze_http",
+        "webhook"
+      ]
+    },
+    "source": {
+      "type": "string",
+      "enum": [
+        "acp_registry",
+        "builtin",
+        "community"
+      ]
+    },
+    "experimental": {
+      "type": "boolean"
+    },
+    "launch": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "command": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "args": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "windowsCommand": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        },
+        "env": {
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        },
+        "cwdMode": {
+          "type": "string",
+          "enum": [
+            "workdir",
+            "home"
+          ]
+        }
+      }
+    },
+    "detect": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "versionCommand": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 256
+          }
+        },
+        "minVersion": {
+          "type": "string",
+          "minLength": 0,
+          "maxLength": 32
+        }
+      }
+    },
+    "auth": {
+      "type": "string",
+      "enum": [
+        "agent_managed",
+        "env_key",
+        "none"
+      ]
+    },
+    "dialect": {
+      "type": "string",
+      "maxLength": 40,
+      "description": "方言钩子 id，空 = 标准 ACP"
+    },
+    "supportsLoadSession": {
+      "type": "boolean"
+    },
+    "supportsWriteTools": {
+      "type": "boolean"
+    },
+    "docsUrl": {
+      "type": "string",
+      "format": "uri"
+    },
+    "configSchema": {
+      "type": "object",
+      "description": "控制台表单 JSON Schema（DEC-010）"
+    }
+  },
+  "required": [
+    "adapterId",
+    "displayName",
+    "family",
+    "source",
+    "experimental",
+    "auth",
+    "supportsLoadSession",
+    "supportsWriteTools",
+    "configSchema"
+  ]
+}

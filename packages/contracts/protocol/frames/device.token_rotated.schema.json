@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/device.token_rotated.schema.json",
+  "title": "device.token_rotated",
+  "description": "帧 device.token_rotated，方向：relay→node（仅在已鉴权连接上发送；节点写入钥匙串后 ack）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "newToken": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512
+    },
+    "effectiveAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "newToken",
+    "effectiveAt"
+  ]
+}

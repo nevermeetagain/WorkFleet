@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/meeting-event.schema.json",
+  "title": "meeting-event",
+  "description": "会议事件（回放）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "meetingId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/meetingId"
+    },
+    "round": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "kind": {
+      "enum": [
+        "round_opened",
+        "speech",
+        "minutes",
+        "decision",
+        "round_closed"
+      ]
+    },
+    "agentId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "content": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 50000
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "meetingId",
+    "round",
+    "kind",
+    "agentId",
+    "content",
+    "createdAt"
+  ]
+}

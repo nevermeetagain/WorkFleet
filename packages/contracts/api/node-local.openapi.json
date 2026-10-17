@@ -1,0 +1,1242 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WorkFleet Node Local API",
+    "version": "1.0.0",
+    "description": "只绑 127.0.0.1:5100（/hooks 在 5102）。x-auth=local：本机随机令牌（启动时写入用户目录 0600 文件，本机 Web 通过同源 Cookie 获取）。模型 Key 只在此 API 的请求体出现一次。 本机鉴权（x-auth=local）：节点启动时生成 256 bit 随机令牌，写入用户数据目录 local-token 文件（0600 / Windows 仅当前用户 ACL）；本机 Web 由节点同源下发 HttpOnly Cookie；CLI 读文件放入 Authorization: Bearer；拒绝非 127.0.0.1 来源与非同源 Origin。"
+  },
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "paths": {
+    "/local/v1/status": {
+      "get": {
+        "summary": "节点状态：版本、中转连接、智能体、资源占用",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/relay-links": {
+      "get": {
+        "summary": "中转连接列表",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/relay-link.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "新增中转（url + 配对码）",
+        "x-auth": "local",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/relay-link.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "url": {
+                    "type": "string"
+                  },
+                  "pairingCode": {
+                    "type": "string"
+                  },
+                  "label": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "url",
+                  "pairingCode",
+                  "label"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/relay-links/{relayLinkId}": {
+      "delete": {
+        "summary": "断开并删除",
+        "x-auth": "local",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/adapters/detect": {
+      "get": {
+        "summary": "探测本机已安装的智能体可执行文件与版本",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/model-profiles": {
+      "get": {
+        "summary": "模型配置列表（不含 Key 明文）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/model-profile.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "新建（apiKey 只在请求中出现一次，写入钥匙串后返回 keyRef）",
+        "x-auth": "local",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/model-profile.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "profile": {
+                    "type": "object"
+                  },
+                  "apiKey": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "profile",
+                  "apiKey"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/model-profiles/{modelProfileId}": {
+      "patch": {
+        "summary": "修改（可选 apiKey 轮换）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/model-profile.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "profile": {
+                    "type": "object"
+                  },
+                  "apiKey": {
+                    "type": "string"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除并清除钥匙串条目",
+        "x-auth": "local",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/model-profiles/{modelProfileId}/test": {
+      "post": {
+        "summary": "连通性测试（返回延迟与 usage）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/usage": {
+      "get": {
+        "summary": "用量与费用（日/月，按配置）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "periods": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "modelProfileId": {
+                            "type": "string"
+                          },
+                          "period": {
+                            "enum": [
+                              "day",
+                              "month"
+                            ]
+                          },
+                          "start": {
+                            "type": "string"
+                          },
+                          "inputTokens": {
+                            "type": "integer"
+                          },
+                          "outputTokens": {
+                            "type": "integer"
+                          },
+                          "costMicros": {
+                            "type": "integer"
+                          },
+                          "currency": {
+                            "type": "string"
+                          },
+                          "limitMicros": {
+                            "type": [
+                              "integer",
+                              "null"
+                            ]
+                          },
+                          "exceeded": {
+                            "type": "boolean"
+                          },
+                          "estimated": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "modelProfileId",
+                          "period",
+                          "start",
+                          "inputTokens",
+                          "outputTokens",
+                          "costMicros",
+                          "currency",
+                          "limitMicros",
+                          "exceeded",
+                          "estimated"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "periods"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/supervisor": {
+      "get": {
+        "summary": "总控设置：模型配置、把关规则、降级状态",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "更新总控设置",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "modelProfileId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "rules": {
+                    "type": "array"
+                  },
+                  "systemPrompt": {
+                    "type": "string"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/supervisor/import-tasks": {
+      "post": {
+        "summary": "导入任务清单目录（G24）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "dir": {
+                    "type": "string"
+                  },
+                  "dryRun": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "dir"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/twin/events": {
+      "get": {
+        "summary": "分身事件分页",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/twin-event.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "name": "kind",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "relayLinkId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/local/v1/twin/events/{twinEventId}": {
+      "patch": {
+        "summary": "修改",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/twin-event.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "text": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "summary": "删除",
+        "x-auth": "local",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/twin/export": {
+      "get": {
+        "summary": "导出 JSONL",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "NDJSON",
+            "content": {
+              "application/x-ndjson": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/doctor": {
+      "get": {
+        "summary": "自检报告",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/recovery-key/export": {
+      "post": {
+        "summary": "导出恢复密钥（需本机系统认证确认）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/recovery-key/import": {
+      "post": {
+        "summary": "导入恢复密钥",
+        "x-auth": "local",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "recoveryKey": {
+                    "type": "string"
+                  },
+                  "backupPath": {
+                    "type": "string",
+                    "description": "从旧电脑拷贝来的数据目录备份路径"
+                  }
+                },
+                "required": [
+                  "recoveryKey",
+                  "backupPath"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/hooks/{hookId}": {
+      "post": {
+        "summary": "Webhook 输入（端口 5102）；头 X-WorkFleet-Timestamp（unix 秒，±300 s）与 X-WorkFleet-Signature: sha256=HMAC(secret, timestamp + '.' + body)；失败 401 WEBHOOK_SIGNATURE_INVALID；X-WorkFleet-Id 24h 去重",
+        "x-auth": "hmac",
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "title": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "priority": {
+                    "enum": [
+                      "p0",
+                      "p1",
+                      "p2",
+                      "p3"
+                    ]
+                  },
+                  "fields": {
+                    "type": "object"
+                  },
+                  "barrierId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/agents": {
+      "get": {
+        "summary": "本机智能体列表（各中转命名空间）",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/hooks": {
+      "get": {
+        "summary": "Webhook 端点列表",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/webhook-hook.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "新建 Webhook 端点（返回一次性密钥）",
+        "x-auth": "local",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "hook": {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/webhook-hook.schema.json"
+                    },
+                    "secret": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "hook",
+                    "secret"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "agentId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "defaultPriority": {
+                    "enum": [
+                      "p0",
+                      "p1",
+                      "p2",
+                      "p3"
+                    ]
+                  }
+                },
+                "required": [
+                  "agentId",
+                  "name"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/hooks/{hookId}": {
+      "delete": {
+        "summary": "删除",
+        "x-auth": "local",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/meetings": {
+      "get": {
+        "summary": "会议列表",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/meeting.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "summary": "发起会议",
+        "x-auth": "local",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/meeting.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "topic": {
+                    "type": "string"
+                  },
+                  "participants": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "roundTimeoutSec": {
+                    "type": "integer"
+                  },
+                  "maxRounds": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "topic",
+                  "participants"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/meetings/{meetingId}/events": {
+      "get": {
+        "summary": "会议事件回放",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/meeting-event.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/supervisor/tasks": {
+      "get": {
+        "summary": "总控任务看板",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/supervisor-task.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/local/v1/transcripts/search": {
+      "get": {
+        "summary": "本机转录检索",
+        "x-auth": "local",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/transcript-entry.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      }
+    }
+  }
+}

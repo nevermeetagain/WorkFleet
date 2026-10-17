@@ -1,0 +1,116 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json",
+  "title": "ids",
+  "description": "所有 ID = 类型前缀 + '_' + 26 位 Crockford ULID（ADR-012）",
+  "$defs": {
+    "userId": {
+      "type": "string",
+      "pattern": "^usr_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "tenantId": {
+      "type": "string",
+      "pattern": "^ten_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "membershipId": {
+      "type": "string",
+      "pattern": "^mem_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "deviceId": {
+      "type": "string",
+      "pattern": "^dev_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "projectId": {
+      "type": "string",
+      "pattern": "^prj_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "agentId": {
+      "type": "string",
+      "pattern": "^agt_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "channelId": {
+      "type": "string",
+      "pattern": "^chn_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "recipientId": {
+      "type": "string",
+      "pattern": "^rcp_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "routeId": {
+      "type": "string",
+      "pattern": "^rte_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "conversationId": {
+      "type": "string",
+      "pattern": "^cnv_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "messageId": {
+      "type": "string",
+      "pattern": "^msg_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "deliveryId": {
+      "type": "string",
+      "pattern": "^dlv_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "approvalId": {
+      "type": "string",
+      "pattern": "^apr_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "barrierId": {
+      "type": "string",
+      "pattern": "^bar_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "auditId": {
+      "type": "string",
+      "pattern": "^aud_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "meetingId": {
+      "type": "string",
+      "pattern": "^mtg_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "modelProfileId": {
+      "type": "string",
+      "pattern": "^mdl_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "twinEventId": {
+      "type": "string",
+      "pattern": "^twn_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "relayLinkId": {
+      "type": "string",
+      "pattern": "^rly_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "attachmentId": {
+      "type": "string",
+      "pattern": "^att_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "filterRuleId": {
+      "type": "string",
+      "pattern": "^flt_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "hookId": {
+      "type": "string",
+      "pattern": "^hok_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "pushSubscriptionId": {
+      "type": "string",
+      "pattern": "^psh_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "taskId": {
+      "type": "string",
+      "pattern": "^tsk_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "leaseId": {
+      "type": "string",
+      "pattern": "^lea_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "traceId": {
+      "type": "string",
+      "pattern": "^trc_[0-9A-HJKMNP-TV-Z]{26}$"
+    },
+    "invitationId": {
+      "type": "string",
+      "pattern": "^inv_[0-9A-HJKMNP-TV-Z]{26}$"
+    }
+  }
+}

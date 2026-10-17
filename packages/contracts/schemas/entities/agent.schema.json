@@ -1,0 +1,92 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json",
+  "title": "agent",
+  "description": "智能体实例（输入端）。alias 在 tenant 内唯一",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "deviceId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/deviceId"
+    },
+    "projectId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/projectId"
+    },
+    "alias": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_-]{0,31}$"
+    },
+    "adapterId": {
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9.-]{1,63}$"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "acp",
+        "coze_http",
+        "webhook",
+        "supervisor"
+      ]
+    },
+    "workdir": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "writeMode": {
+      "type": "string",
+      "enum": [
+        "read_only",
+        "write"
+      ]
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "running",
+        "waiting_approval",
+        "stopped",
+        "error",
+        "unavailable"
+      ]
+    },
+    "experimental": {
+      "type": "boolean"
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "config": {
+      "type": "object",
+      "description": "按适配器 configSchema 校验"
+    },
+    "supervised": {
+      "type": "boolean",
+      "description": "是否处于总控模式（由 route.sync 下发）"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "deviceId",
+    "projectId",
+    "alias",
+    "adapterId",
+    "kind",
+    "workdir",
+    "writeMode",
+    "status",
+    "experimental",
+    "createdAt",
+    "config",
+    "supervised"
+  ]
+}

@@ -1,0 +1,51 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/identity/session-claims.schema.json",
+  "title": "session-claims",
+  "description": "Web 会话（服务端存储；Cookie 只放不透明 sessionId，HttpOnly+Secure+SameSite=Lax，14 天滑动过期）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "sessionId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "userId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "role": {
+      "$ref": "https://workfleet.dev/contracts/v1/identity/role.schema.json"
+    },
+    "projectScope": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/projectId"
+      }
+    },
+    "issuedAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "expiresAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "csrf": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    }
+  },
+  "required": [
+    "sessionId",
+    "userId",
+    "tenantId",
+    "role",
+    "projectScope",
+    "issuedAt",
+    "expiresAt",
+    "csrf"
+  ]
+}

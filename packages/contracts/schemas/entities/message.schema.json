@@ -1,0 +1,102 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/message.schema.json",
+  "title": "message",
+  "description": "消息账本条目（append-only）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+    },
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "direction": {
+      "type": "string",
+      "enum": [
+        "inbound",
+        "outbound",
+        "system"
+      ]
+    },
+    "author": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "user",
+            "agent",
+            "supervisor",
+            "system"
+          ]
+        },
+        "refId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "kind",
+        "refId"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "p0",
+        "p1",
+        "p2",
+        "p3"
+      ]
+    },
+    "body": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message-body.schema.json"
+    },
+    "replyToId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "platformMessageId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "conversationId",
+    "generation",
+    "direction",
+    "author",
+    "priority",
+    "body",
+    "replyToId",
+    "platformMessageId",
+    "idempotencyKey",
+    "createdAt"
+  ]
+}

@@ -1,0 +1,63 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/meeting.schema.json",
+  "title": "meeting",
+  "description": "总控会议（DEC-019）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/meetingId"
+    },
+    "topic": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 500
+    },
+    "participants": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+      }
+    },
+    "policy": {
+      "type": "string",
+      "enum": [
+        "all_or_timeout"
+      ]
+    },
+    "roundTimeoutSec": {
+      "type": "integer",
+      "minimum": 30,
+      "maximum": 3600
+    },
+    "maxRounds": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 10
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "summarizing",
+        "decided",
+        "cancelled"
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "topic",
+    "participants",
+    "policy",
+    "roundTimeoutSec",
+    "maxRounds",
+    "status",
+    "createdAt"
+  ]
+}

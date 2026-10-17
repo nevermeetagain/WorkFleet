@@ -1,0 +1,310 @@
+{
+  "$comment": "契约 ⑥ UX States：每个核心界面必须实现以下全部状态；E2E 用 data-state 属性断言",
+  "states": {
+    "empty": "说明为什么为空 + 一个主操作按钮",
+    "loading": "骨架屏 ≥200 ms 后显示；<200 ms 不闪烁",
+    "error": "错误码对应 ui 文案 + traceId 复制 + 重试（retryable）",
+    "no_permission": "FORBIDDEN 专用页：说明所需角色，不显示数据",
+    "success": "操作后 Toast 2.5 s；列表就地更新",
+    "offline": "节点/中转断开横幅：显示最后在线时间与排队数"
+  },
+  "screens": {
+    "login": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "register": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "device_pairing": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "device_list": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "project_tree": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "agent_list": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "agent_form": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "channel_list": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "channel_bind_wechat_qr": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "channel_form": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "recipient_list": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "route_list": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "route_editor_dry_run": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "chat": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "conversation_history": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "approval_inbox": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "audit_log": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "members": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "filter_rules": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "notifications_settings": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "emergency_banner": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "node_local_models": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "node_local_agents": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "node_local_twin": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "node_local_doctor": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "barriers": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "deliveries_dead_letter": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "onboarding_wizard": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "meeting_replay": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "task_board": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "supervisor_settings": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "node_local_relay_links": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "project_overview": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "invitation_accept": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "totp_setup": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "notification_settings": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ],
+    "webhook_hooks": [
+      "empty",
+      "loading",
+      "error",
+      "no_permission",
+      "success",
+      "offline"
+    ]
+  },
+  "dataAttribute": "data-ux-state"
+}

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/transcript-entry.schema.json",
+  "title": "transcript-entry",
+  "description": "智能体侧转录条目（history.result、节点检索）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "lineNo": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "role": {
+      "enum": [
+        "user",
+        "agent",
+        "tool",
+        "system"
+      ]
+    },
+    "kind": {
+      "enum": [
+        "text",
+        "tool_call",
+        "tool_result",
+        "plan",
+        "permission",
+        "status"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 50000
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "lineNo",
+    "generation",
+    "role",
+    "kind",
+    "text",
+    "createdAt"
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json",
+  "title": "page",
+  "description": "游标分页响应；items 由具体端点 allOf 约束",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array"
+    },
+    "nextCursor": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "hasMore": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "items",
+    "nextCursor",
+    "hasMore"
+  ]
+}

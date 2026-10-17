@@ -1,0 +1,237 @@
+{
+  "$comment": "错误码唯一源（契约 ② Errors）。前端展示列对应 ux/ux-states.json。",
+  "version": 1,
+  "codes": [
+    {
+      "code": "VALIDATION_FAILED",
+      "httpStatus": 400,
+      "retryable": false,
+      "ui": "表单字段下方显示 details.fields[].message",
+      "meaning": "请求体不符合 schema"
+    },
+    {
+      "code": "UNAUTHENTICATED",
+      "httpStatus": 401,
+      "retryable": false,
+      "ui": "跳转登录页",
+      "meaning": "未登录或会话过期"
+    },
+    {
+      "code": "TOTP_REQUIRED",
+      "httpStatus": 401,
+      "retryable": false,
+      "ui": "弹出二次验证",
+      "meaning": "需要 TOTP"
+    },
+    {
+      "code": "FORBIDDEN",
+      "httpStatus": 403,
+      "retryable": false,
+      "ui": "无权限态（UX-STATE no_permission）",
+      "meaning": "角色不允许"
+    },
+    {
+      "code": "NOT_FOUND",
+      "httpStatus": 404,
+      "retryable": false,
+      "ui": "空态 + 返回上级",
+      "meaning": "资源不存在或不属于本组织"
+    },
+    {
+      "code": "CONFLICT",
+      "httpStatus": 409,
+      "retryable": false,
+      "ui": "Toast 并刷新数据",
+      "meaning": "并发修改（version 不匹配）"
+    },
+    {
+      "code": "ALIAS_TAKEN",
+      "httpStatus": 409,
+      "retryable": false,
+      "ui": "字段错误",
+      "meaning": "智能体别名已占用"
+    },
+    {
+      "code": "IDEMPOTENCY_REPLAY",
+      "httpStatus": 409,
+      "retryable": false,
+      "ui": "静默，用首次结果",
+      "meaning": "重复请求"
+    },
+    {
+      "code": "RATE_LIMITED",
+      "httpStatus": 429,
+      "retryable": true,
+      "ui": "Toast：稍后重试（含 retryAfterSec）",
+      "meaning": "超过速率"
+    },
+    {
+      "code": "PAIRING_CODE_INVALID",
+      "httpStatus": 400,
+      "retryable": false,
+      "ui": "字段错误",
+      "meaning": "配对码错误或过期"
+    },
+    {
+      "code": "DEVICE_OFFLINE",
+      "httpStatus": 409,
+      "retryable": true,
+      "ui": "会话内提示：设备离线，已排队",
+      "meaning": "目标节点离线（消息已入队）"
+    },
+    {
+      "code": "DEVICE_REVOKED",
+      "httpStatus": 403,
+      "retryable": false,
+      "ui": "错误态",
+      "meaning": "设备已吊销"
+    },
+    {
+      "code": "AGENT_UNAVAILABLE",
+      "httpStatus": 409,
+      "retryable": true,
+      "ui": "会话内提示 + 诊断链接",
+      "meaning": "智能体可执行文件缺失或启动失败"
+    },
+    {
+      "code": "AGENT_BUSY_WRITE_LEASE",
+      "httpStatus": 409,
+      "retryable": true,
+      "ui": "提示：该目录正被 {alias} 写入，可选 worktree",
+      "meaning": "并发写租约冲突（G10）"
+    },
+    {
+      "code": "APPROVAL_EXPIRED",
+      "httpStatus": 409,
+      "retryable": false,
+      "ui": "卡片置灰：已过期",
+      "meaning": "审批超时"
+    },
+    {
+      "code": "APPROVAL_ALREADY_DECIDED",
+      "httpStatus": 409,
+      "retryable": false,
+      "ui": "卡片显示结果",
+      "meaning": "重复审批"
+    },
+    {
+      "code": "CHANNEL_CREDENTIAL_EXPIRED",
+      "httpStatus": 409,
+      "retryable": true,
+      "ui": "渠道卡片红点 + 重新扫码",
+      "meaning": "渠道凭据失效"
+    },
+    {
+      "code": "CHANNEL_QUOTA_EXHAUSTED",
+      "httpStatus": 429,
+      "retryable": true,
+      "ui": "提示：回复任意字续期 / 走备用渠道",
+      "meaning": "渠道主动消息额度不足"
+    },
+    {
+      "code": "CHANNEL_CAPABILITY_UNSUPPORTED",
+      "httpStatus": 422,
+      "retryable": false,
+      "ui": "降级说明",
+      "meaning": "渠道不支持该能力"
+    },
+    {
+      "code": "ROUTE_INVALID",
+      "httpStatus": 422,
+      "retryable": false,
+      "ui": "dry-run 面板显示原因",
+      "meaning": "绑定不满足模式约束"
+    },
+    {
+      "code": "BOT_IDENTITY_CONFLICT",
+      "httpStatus": 409,
+      "retryable": false,
+      "ui": "向导阻断 + 说明",
+      "meaning": "Bot 身份已被其他消费者使用（DEC-034）"
+    },
+    {
+      "code": "RECIPIENT_UNAUTHORIZED",
+      "httpStatus": 403,
+      "retryable": false,
+      "ui": "IM 内固定提示",
+      "meaning": "IM 发送者未授权"
+    },
+    {
+      "code": "BUDGET_EXCEEDED",
+      "httpStatus": 402,
+      "retryable": false,
+      "ui": "总控横幅：已降级为规则把关",
+      "meaning": "模型费用超限"
+    },
+    {
+      "code": "MODEL_PROVIDER_ERROR",
+      "httpStatus": 502,
+      "retryable": true,
+      "ui": "Toast + 重试",
+      "meaning": "模型提供方错误"
+    },
+    {
+      "code": "EMERGENCY_STOPPED",
+      "httpStatus": 423,
+      "retryable": false,
+      "ui": "全局红色横幅 + 恢复按钮",
+      "meaning": "已急停"
+    },
+    {
+      "code": "PROTOCOL_VERSION_UNSUPPORTED",
+      "httpStatus": 426,
+      "retryable": false,
+      "ui": "节点提示升级",
+      "meaning": "节点协议版本过旧"
+    },
+    {
+      "code": "PAYLOAD_TOO_LARGE",
+      "httpStatus": 413,
+      "retryable": false,
+      "ui": "提示改用附件",
+      "meaning": "超过 1 MiB 帧或上传上限"
+    },
+    {
+      "code": "INTERNAL",
+      "httpStatus": 500,
+      "retryable": true,
+      "ui": "错误态 + traceId 可复制",
+      "meaning": "未预期错误"
+    },
+    {
+      "code": "CIRCUIT_OPEN",
+      "httpStatus": 503,
+      "retryable": true,
+      "ui": "Toast：服务暂时降级",
+      "meaning": "熔断打开"
+    },
+    {
+      "code": "PROTOCOL_SEQ_GAP",
+      "httpStatus": 409,
+      "retryable": true,
+      "ui": "节点自动重连续传（不展示）",
+      "meaning": "帧序号间隙"
+    },
+    {
+      "code": "AGENT_CRASHED",
+      "httpStatus": 409,
+      "retryable": true,
+      "ui": "会话内提示：智能体异常退出，已重启",
+      "meaning": "子进程崩溃"
+    },
+    {
+      "code": "WEBHOOK_SIGNATURE_INVALID",
+      "httpStatus": 401,
+      "retryable": false,
+      "ui": "（HTTP 调用方）",
+      "meaning": "签名错误或时间戳超出 ±300 s"
+    },
+    {
+      "code": "INVITATION_INVALID",
+      "httpStatus": 400,
+      "retryable": false,
+      "ui": "错误页",
+      "meaning": "邀请无效或过期"
+    }
+  ]
+}

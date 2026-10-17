@@ -1,0 +1,73 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/device.schema.json",
+  "title": "device",
+  "description": "本机节点设备",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/deviceId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "ownerUserId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "os": {
+      "type": "string",
+      "enum": [
+        "windows",
+        "macos",
+        "linux"
+      ]
+    },
+    "nodeVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "isPrimary": {
+      "type": "boolean"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "online",
+        "offline",
+        "revoked"
+      ]
+    },
+    "lastSeenAt": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "ownerUserId",
+    "name",
+    "os",
+    "nodeVersion",
+    "isPrimary",
+    "status",
+    "lastSeenAt",
+    "createdAt"
+  ]
+}

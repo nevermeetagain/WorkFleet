@@ -1,0 +1,78 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/filter-rule.schema.json",
+  "title": "filter-rule",
+  "description": "接收人 × 业务线 × 字段过滤与脱敏（G3）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/filterRuleId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "match": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "recipientIds": {
+          "type": "array",
+          "items": {
+            "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/recipientId"
+          }
+        },
+        "businessLines": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 40
+          }
+        }
+      }
+    },
+    "action": {
+      "type": "string",
+      "enum": [
+        "allow_fields",
+        "mask_fields",
+        "drop_message"
+      ]
+    },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1,
+        "maxLength": 80
+      }
+    },
+    "maskStyle": {
+      "type": "string",
+      "enum": [
+        "full",
+        "partial",
+        "hash"
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "name",
+    "match",
+    "action",
+    "fields",
+    "maskStyle",
+    "createdAt"
+  ]
+}

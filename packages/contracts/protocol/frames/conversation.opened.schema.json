@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/conversation.opened.schema.json",
+  "title": "conversation.opened",
+  "description": "帧 conversation.opened，方向：relay→node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "requestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "requestId",
+    "conversationId",
+    "generation"
+  ]
+}

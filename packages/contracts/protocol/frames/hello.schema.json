@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/hello.schema.json",
+  "title": "hello",
+  "description": "帧 hello，方向：node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "protocolVersion": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "nodeVersion": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 32
+    },
+    "os": {
+      "type": "string",
+      "enum": [
+        "windows",
+        "macos",
+        "linux"
+      ]
+    },
+    "lastAckedRelaySeq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "agents": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+      }
+    },
+    "supportedVersions": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    }
+  },
+  "required": [
+    "protocolVersion",
+    "nodeVersion",
+    "os",
+    "lastAckedRelaySeq",
+    "agents"
+  ]
+}

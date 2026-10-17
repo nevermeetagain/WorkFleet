@@ -1,0 +1,168 @@
+{
+  "$comment": "进程内领域事件（契约 ⑤ Events）。跨进程只经 protocol 帧。所有处理器必须幂等。 所有 *.changed/*.revoked/member.* 事件由 audit 模块订阅写审计（REQ-F-028）。",
+  "version": 1,
+  "events": [
+    {
+      "name": "message.received",
+      "emitter": "relay.conversations",
+      "trigger": "入站消息持久化后",
+      "idempotencyKey": "channelId+platformMessageId"
+    },
+    {
+      "name": "message.routed",
+      "emitter": "relay.routing",
+      "trigger": "选路完成",
+      "idempotencyKey": "messageId"
+    },
+    {
+      "name": "message.held",
+      "emitter": "relay.approvals",
+      "trigger": "目标有待审批",
+      "idempotencyKey": "messageId"
+    },
+    {
+      "name": "delivery.sent",
+      "emitter": "relay.delivery",
+      "trigger": "渠道确认发送",
+      "idempotencyKey": "deliveryId+attempt"
+    },
+    {
+      "name": "delivery.failed",
+      "emitter": "relay.delivery",
+      "trigger": "重试耗尽进死信",
+      "idempotencyKey": "deliveryId"
+    },
+    {
+      "name": "approval.requested",
+      "emitter": "relay.approvals",
+      "trigger": "节点上报审批",
+      "idempotencyKey": "approvalId"
+    },
+    {
+      "name": "approval.decided",
+      "emitter": "relay.approvals",
+      "trigger": "用户审批或超时",
+      "idempotencyKey": "approvalId"
+    },
+    {
+      "name": "device.online",
+      "emitter": "relay.devices",
+      "trigger": "hello 握手成功",
+      "idempotencyKey": "deviceId+connectedAt"
+    },
+    {
+      "name": "device.offline",
+      "emitter": "relay.devices",
+      "trigger": "60 s 无帧",
+      "idempotencyKey": "deviceId+lastSeenAt"
+    },
+    {
+      "name": "channel.health_changed",
+      "emitter": "relay.channels",
+      "trigger": "健康状态变化",
+      "idempotencyKey": "channelId+health+at"
+    },
+    {
+      "name": "barrier.closed",
+      "emitter": "relay.orchestration",
+      "trigger": "收齐或超时",
+      "idempotencyKey": "barrierId"
+    },
+    {
+      "name": "emergency.stopped",
+      "emitter": "relay.system",
+      "trigger": "/stop all",
+      "idempotencyKey": "tenantId+at"
+    },
+    {
+      "name": "route.updated",
+      "emitter": "relay.routing",
+      "trigger": "绑定变更",
+      "idempotencyKey": "routeId+version"
+    },
+    {
+      "name": "budget.exceeded",
+      "emitter": "node.models",
+      "trigger": "日/月上限触发",
+      "idempotencyKey": "modelProfileId+period"
+    },
+    {
+      "name": "supervisor.verdict",
+      "emitter": "node.supervisor",
+      "trigger": "总控分级",
+      "idempotencyKey": "messageId"
+    },
+    {
+      "name": "meeting.round_closed",
+      "emitter": "node.meetings",
+      "trigger": "一轮收齐或超时",
+      "idempotencyKey": "meetingId+round"
+    },
+    {
+      "name": "lease.acquired",
+      "emitter": "node.workspace-guard",
+      "trigger": "写租约获取",
+      "idempotencyKey": "leaseId"
+    },
+    {
+      "name": "lease.released",
+      "emitter": "node.workspace-guard",
+      "trigger": "写租约释放",
+      "idempotencyKey": "leaseId"
+    },
+    {
+      "name": "device.revoked",
+      "emitter": "relay.devices",
+      "trigger": "吊销设备",
+      "idempotencyKey": "deviceId"
+    },
+    {
+      "name": "member.invited",
+      "emitter": "relay.tenancy",
+      "trigger": "发出邀请",
+      "idempotencyKey": "invitationId"
+    },
+    {
+      "name": "member.role_changed",
+      "emitter": "relay.tenancy",
+      "trigger": "改角色/范围",
+      "idempotencyKey": "membershipId+version"
+    },
+    {
+      "name": "member.removed",
+      "emitter": "relay.tenancy",
+      "trigger": "移除成员",
+      "idempotencyKey": "membershipId"
+    },
+    {
+      "name": "filter.changed",
+      "emitter": "relay.permissions-filter",
+      "trigger": "过滤规则增删改",
+      "idempotencyKey": "filterRuleId+version"
+    },
+    {
+      "name": "channel.credential_bound",
+      "emitter": "relay.channels",
+      "trigger": "提交/扫码凭据",
+      "idempotencyKey": "channelId+at"
+    },
+    {
+      "name": "notification.sent",
+      "emitter": "relay.notifications",
+      "trigger": "通知送达",
+      "idempotencyKey": "notificationId"
+    },
+    {
+      "name": "quota.low",
+      "emitter": "relay.channels",
+      "trigger": "渠道额度剩余≤3",
+      "idempotencyKey": "channelId+recipientId+refreshedAt"
+    },
+    {
+      "name": "agent.crashed",
+      "emitter": "node.agents",
+      "trigger": "子进程异常退出",
+      "idempotencyKey": "agentId+pid"
+    }
+  ]
+}

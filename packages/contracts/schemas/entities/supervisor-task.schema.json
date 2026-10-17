@@ -1,0 +1,80 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/supervisor-task.schema.json",
+  "title": "supervisor-task",
+  "description": "总控任务（分派/导入）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/taskId"
+    },
+    "source": {
+      "enum": [
+        "meeting",
+        "import",
+        "chat"
+      ]
+    },
+    "title": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    },
+    "spec": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 50000
+    },
+    "assignedAgentId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "state": {
+      "enum": [
+        "pending",
+        "dispatched",
+        "running",
+        "done",
+        "failed",
+        "cancelled"
+      ]
+    },
+    "dependsOn": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/taskId"
+      }
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "finishedAt": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "source",
+    "title",
+    "spec",
+    "assignedAgentId",
+    "state",
+    "dependsOn",
+    "createdAt",
+    "finishedAt"
+  ]
+}

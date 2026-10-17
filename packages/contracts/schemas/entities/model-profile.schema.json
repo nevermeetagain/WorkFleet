@@ -1,0 +1,161 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/model-profile.schema.json",
+  "title": "model-profile",
+  "description": "模型配置（仅节点本机 API；keyRef 指向 OS 钥匙串条目，明文 Key 永不出现在契约中）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/modelProfileId"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "provider": {
+      "type": "string",
+      "enum": [
+        "openai_compatible",
+        "anthropic"
+      ]
+    },
+    "baseUrl": {
+      "type": "string",
+      "format": "uri",
+      "maxLength": 500
+    },
+    "model": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 120
+    },
+    "keyRef": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128
+    },
+    "params": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "temperature": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 2
+        },
+        "maxTokens": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 1000000
+        },
+        "timeoutSec": {
+          "type": "integer",
+          "minimum": 5,
+          "maximum": 600
+        },
+        "retries": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 5
+        }
+      }
+    },
+    "pricing": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "inputPerMTokMicros": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "outputPerMTokMicros": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "currency": {
+          "type": "string",
+          "pattern": "^[A-Z]{3}$"
+        },
+        "cachedInputPerMTokMicros": {
+          "type": "integer",
+          "minimum": 0
+        }
+      },
+      "required": [
+        "inputPerMTokMicros",
+        "outputPerMTokMicros",
+        "currency"
+      ]
+    },
+    "limits": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "dailyMicros": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "monthlyMicros": {
+          "type": [
+            "integer",
+            "null"
+          ],
+          "minimum": 0
+        },
+        "onExceed": {
+          "type": "string",
+          "enum": [
+            "degrade_to_rules",
+            "pause"
+          ]
+        },
+        "timezone": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        },
+        "warnAtPercent": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        }
+      },
+      "required": [
+        "dailyMicros",
+        "monthlyMicros",
+        "onExceed"
+      ]
+    },
+    "systemPrompt": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 20000
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "provider",
+    "baseUrl",
+    "model",
+    "keyRef",
+    "params",
+    "pricing",
+    "limits",
+    "systemPrompt",
+    "createdAt",
+    "version"
+  ]
+}

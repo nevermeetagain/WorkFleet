@@ -1,0 +1,39 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/conversation.open.schema.json",
+  "title": "conversation.open",
+  "description": "帧 conversation.open，方向：node→relay（节点主动发起会话：Webhook/Coze/总控分派/会议）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "requestId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 200
+    },
+    "purpose": {
+      "enum": [
+        "webhook",
+        "coze",
+        "supervisor_dispatch",
+        "meeting"
+      ]
+    },
+    "targetRouteId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/routeId"
+    }
+  },
+  "required": [
+    "requestId",
+    "agentId",
+    "purpose"
+  ]
+}

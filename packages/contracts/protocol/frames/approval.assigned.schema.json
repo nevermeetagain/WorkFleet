@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/approval.assigned.schema.json",
+  "title": "approval.assigned",
+  "description": "帧 approval.assigned，方向：relay→node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "approvalId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/approvalId"
+    },
+    "shortCode": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 99
+    }
+  },
+  "required": [
+    "approvalId",
+    "shortCode"
+  ]
+}
