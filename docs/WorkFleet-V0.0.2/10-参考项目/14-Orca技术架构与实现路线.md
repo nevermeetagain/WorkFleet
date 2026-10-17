@@ -1,4 +1,4 @@
-# 14 · Orca 技术架构与实现路线（AideanFleet V0.0.2 · 研究方法第 8 步）
+# 14 · Orca 技术架构与实现路线（WorkFleet V0.0.2 · 研究方法第 8 步）
 
 > 分析对象：https://github.com/stablyai/orca（MIT，Copyright (c) 2026 Lovecast Inc.）
 > **最新版本**：`main` @ `fd1c6a592cc98f4ae6348f2bb101337a4b6f90a6`（2026-10-16 18:15 -0700 = **2026-10-17 09:15 +08:00**，“fix(orcad): never claim or reclaim another machine's server… (#29902)”），`package.json` 版本仍为 `1.4.214`
@@ -15,7 +15,7 @@
 1. **Orca 的架构本质**：一个“**多智能体运行时内核**（`OrcaRuntimeService` + 结构化会话宿主 + PTY 守护进程）”被三种宿主外壳承载——Electron 桌面、`orca serve`（Electron 无窗口）、`orcad`（纯 Node 24 守护进程）；其上叠加 **编排（SQLite 邮箱 + DAG + 熔断 + gate）**、**自动化调度（60s tick）**、**会话转录索引（FTS5）**；对外经 **本地 RPC（默认 6768）→ 云中继 → 手机 App** 暴露。`已确认`
 2. **输入端接入是三通路**：ACP（Grok/OpenCode/OMP，2026-10-05 起才独立成层）/ 厂商 SDK 结构化流（Claude Agent SDK、Codex app-server）/ PTY+hooks 兜底（其余 TUI agent）。`已确认`
 3. **基线以来最相关的变化**（§11 详述）：① ACP 层新增“托管运行时（managed runtime）只在用户要求时安装”“每进程私有临时目录”“每个 chat 自己的权限模式”；② 编排邮件提示对结构化会话改为**立即投递（delivery:'now'）并在有待答权限请求时“held”**；③ 会话解析缓存改为**每转录一行的 SQLite**；④ `orcad` 大量健壮性修复（跨机锁、端口 6768 回退、重启保活）。**核心 schema（编排 v43、会话检索 v6）与调度器未变**。`已确认`
-4. **对 AideanFleet 的定位不变**：首选“按模块移植（MIT）”——ACP 客户端（peer + session setup + launch-spec 表 + dialect）、编排 schema/状态机、调度解析、会话索引；不整体 fork。新增两条可借鉴：**托管运行时安装器** 与 **“权限请求挂起时延迟投递”** 的 IM 侧等价策略。`部分确认`
+4. **对 WorkFleet 的定位不变**：首选“按模块移植（MIT）”——ACP 客户端（peer + session setup + launch-spec 表 + dialect）、编排 schema/状态机、调度解析、会话索引；不整体 fork。新增两条可借鉴：**托管运行时安装器** 与 **“权限请求挂起时延迟投递”** 的 IM 侧等价策略。`部分确认`
 
 ---
 
@@ -295,7 +295,7 @@ flowchart TB
 ```
 - 部署形态：桌面三平台；`orcad` 可经 SSH 部署、更新、回滚、停止（#16741 系列，2026-10-01）；WSL lane；relay 有地区 cell（如“declare US cells c32 and c33 at the 3,000-host shape”，#24444）。`已确认（提交标题）`
 - 资源：Electron 桌面重；`orcad` 无 Electron，但需 Node 24 + node-pty 原生模块（有 glibc 2.17 兼容 rung，#24148）。**具体内存/CPU 数据 `证据不足`**（未运行）。
-- 端口：本地 RPC 默认 6768（`serve.ts` notes；`mobile/README.md:7`），与 AideanFleet 3000/3333 不冲突。`已确认`
+- 端口：本地 RPC 默认 6768（`serve.ts` notes；`mobile/README.md:7`），与 WorkFleet 3000/3333 不冲突。`已确认`
 
 ---
 
@@ -334,7 +334,7 @@ flowchart TB
 **演进规律（判断，`部分确认`）**：
 1. **先 PTY 后结构化**：agent 接入从“终端屏幕+hooks”逐步迁到“结构化会话”（Codex app-server → Claude SDK → ACP），ACP 是最后才抽象出来的通用层——说明 ACP 生态成熟度晚于厂商私有协议。
 2. **先单机后无头再联邦**：桌面→`orca serve`→`orcad`→SSH 托管→联邦派工。
-3. **编排的重构集中在“身份”**：handle → pane key → Orca session id 统一 party；schema 从 v2 迁到 v43。AideanFleet 应**一开始就用稳定的会话主键作为编排地址**，避免同样的迁移成本。
+3. **编排的重构集中在“身份”**：handle → pane key → Orca session id 统一 party；schema 从 v2 迁到 v43。WorkFleet 应**一开始就用稳定的会话主键作为编排地址**，避免同样的迁移成本。
 4. **节奏极快**（日均 ~70 提交，10-16 单日数百），移植件需锁定版本、按契约（schema/skill-guide）而非按文件跟进。
 
 ---
@@ -359,13 +359,13 @@ flowchart TB
 
 ---
 
-## 13. 对 AideanFleet 的借鉴与迁移路线
+## 13. 对 WorkFleet 的借鉴与迁移路线
 
 | # | 移植项 | 源（HEAD） | 迁移方式 | 估算工作量* | 优先级 |
 |---|---|---|---|---|---|
 | M1 | ACP JSON-RPC peer（NDJSON、上限、超时、写队列） | `acp-json-rpc-peer.ts`(297 行) + `acp-peer-limits.ts`、`acp-write-queue.ts`、`acp-rpc-envelope.ts`、`shared/main-process-ndjson-framer` | 近乎原样复制，去 Electron 依赖 | 2–3 人日 | P0 |
 | M2 | Session setup（new/load/resume/auth） | `acp-session-setup.ts`(85 行) + `generated/acp-protocol.generated.ts` | 原样；生成文件可改用官方 `agent-client-protocol` schema 再生成 | 1 人日 | P0 |
-| M3 | Launch-spec 表 + Dialect 接口 + 托管运行时 | `acp-launch-specs.ts`、`acp-dialects/acp-dialect.ts` | 重写为 AideanFleet `InputAdapterSpec`（保留字段语义：account、authMethod、modelDiscovery、managedRuntime、privateTempDirectory） | 3–5 人日 | P0 |
+| M3 | Launch-spec 表 + Dialect 接口 + 托管运行时 | `acp-launch-specs.ts`、`acp-dialects/acp-dialect.ts` | 重写为 WorkFleet `InputAdapterSpec`（保留字段语义：account、authMethod、modelDiscovery、managedRuntime、privateTempDirectory） | 3–5 人日 | P0 |
 | M4 | 编排 schema（runs/messages/deliveries/tasks/dispatch_contexts/decision_gates） | `db/schema/create-*-tables-sql.ts` | 取 v43 终态 DDL 作为 V1 初始 schema，**`to_handle` 扩展为 `party_uri`（agent:/im:/user:）**；不移植 v2–v42 迁移 | 3 人日 | P0 |
 | M5 | Coordinator tick 状态机 + 熔断 + gate | `coordinator.ts`、`coordinator-*`、`db/dispatch-context/*` | 移植并补 `decompose()`（总控 LLM 产出 Task DAG）与 `processEscalations()`（分级外发到 IM） | 8–12 人日 | P1 |
 | M6 | 邮件投递“held when actionable prompt” | `structured-mailbox-pointer-*.ts` | 不移植代码，移植策略：员工有待答权限/问题时，总控消息延迟；IM 侧用户有待决 gate 时合并推送 | 2 人日 | P1 |
@@ -375,10 +375,10 @@ flowchart TB
 | M10 | 单实例锁/监督 | `orcad-instance-lock*.ts`、`serve --supervise` 语义 | 参考实现设备端总控守护进程 | 2–3 人日 | P2 |
 
 \* 估算为单名熟悉 TS 的工程师，含单测，不含联调；`部分确认`（主观）。
-**许可**：MIT，复制代码需在 AideanFleet `THIRD_PARTY_NOTICES` 保留 “Copyright (c) 2026 Lovecast Inc.” 与许可全文。`已确认`
+**许可**：MIT，复制代码需在 WorkFleet `THIRD_PARTY_NOTICES` 保留 “Copyright (c) 2026 Lovecast Inc.” 与许可全文。`已确认`
 
 **迁移路线**：
-1. **V0.0.2 设计期**：以 M1–M4 为输入端适配层与总控持久层的蓝本，形成 AideanFleet ER（与 Hindsight bank 规范对齐）。
+1. **V0.0.2 设计期**：以 M1–M4 为输入端适配层与总控持久层的蓝本，形成 WorkFleet ER（与 Hindsight bank 规范对齐）。
 2. **V0.1 原型**：M1–M3 接 OpenCode/Grok 等原生 ACP agent，Claude Code/Codex 走官方 ACP 适配器（`claude-code-acp`、`codex-acp`，见 30-协议与端点）而非移植 Orca 的 SDK 通路；M7 上线管理/通知模式定时推送。
 3. **V0.2**：M4–M6 总控；M8–M9 历史检索与 `/clear`。
 4. **持续**：每月对照 Orca `db/contract-constants.ts` 的 `SCHEMA_VERSION` 与 `skill-guides/orchestration*.md` 契约差异，选择性吸收。
@@ -387,7 +387,7 @@ flowchart TB
 
 ## 14. 四轮方法收敛（摘要）
 
-- **5W1H**：What=§1–§9；Why=AideanFleet 输入侧与 Orca 问题域一致、输出侧不同；Where/When=设计期优先引入 M1–M4；Who=输入适配/总控/调度三模块负责人；How=按契约移植；What if=见下。
+- **5W1H**：What=§1–§9；Why=WorkFleet 输入侧与 Orca 问题域一致、输出侧不同；Where/When=设计期优先引入 M1–M4；Who=输入适配/总控/调度三模块负责人；How=按契约移植；What if=见下。
 - **苏格拉底追问**：
   - “ACP 层可直接移植？”——证据：`acp-session-setup.ts` 仅依赖 zod 与生成类型（`:1-11`），peer 仅依赖 node:stream 与本目录模块（`acp-json-rpc-peer.ts:1-19`）。反证：`acp-structured-*` 深度依赖 native-chat 宿主 → **只移植 peer/setup/spec/dialect 接口，不移植 structured-* 层**。`已确认`
   - “RRULE 可做单次？”——`automation-schedule-parsing.ts:47-49` 只接受三种 FREQ，COUNT 不读。`已确认：不可`

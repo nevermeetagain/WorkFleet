@@ -1,4 +1,4 @@
-# 15 · Hindsight 技术架构与实现路线（AideanFleet V0.0.2 · 研究方法第 8 步）
+# 15 · Hindsight 技术架构与实现路线（WorkFleet V0.0.2 · 研究方法第 8 步）
 
 > 分析对象：https://github.com/vectorize-io/hindsight（MIT，Copyright (c) 2025 Vectorize AI, Inc.）
 > **最新版本**：`main` @ `5331da2f4db369528bb122075341a7de9c3df6df`（2026-10-16 15:58 -0400 = **2026-10-17 03:58 +08:00**，“blog: four things to build with Vercel Eve and Hindsight (#5699)”）；`hindsight-api-slim/pyproject.toml` `version = "1.0.0"`（`v1.0.0` 标签 2026-10-13，GitHub Releases 页确认 https://github.com/vectorize-io/hindsight/releases/tag/v1.0.0）
@@ -14,7 +14,7 @@
 1. **架构本质**：一个 **“PostgreSQL 即一切”的记忆服务**——FastAPI（REST + MCP）接请求，**同一 PG 既存记忆（pgvector + BM25 + 图边表）又当任务队列（`async_operations` + `FOR UPDATE SKIP LOCKED`）**，worker（内嵌或独立）跑 retain / consolidation / mental-model refresh / 图维护等 12 类任务，maintenance 循环做 cron 刷新与对账。`已确认`
 2. **核心管线**：retain（LLM 抽取事实/实体/时间/因果 → 嵌入 → 入库）→ 自动 consolidation（事实合成为带证据的 observations）→ mental model / knowledge page 刷新（delta 或 full）；读侧 recall（4 路并行 + RRF + 重排）与 reflect（工具调用代理）。`已确认`
 3. **基线以来的关键变化**：**“决策模型（decision model）”成为横切新层**——回答类型化问题的亚秒级小模型（provider: typesafe/cloudflare/openai，默认 `none`，`config.py:1538`），用于 recall 排序（基线已有）、**consolidation 预分诊（#5664）**、**reflect 决策编排（#5382）**；另有 **delta 模型的定时全量刷新 `full_refresh_cron`（#5674）**、ChatGPT 登录态 LLM provider（#5688）、NVIDIA NIM 嵌入/重排（#5697）。`已确认`
-4. **对 AideanFleet 的定位不变**：作为“知识库 + 分身 loop”的外部服务（REST/MCP），不 fork；新增价值：`full_refresh_cron` 正好解决“分身画像长期 delta 漂移”，决策模型可降低 consolidation 的 LLM 调用（需额外部署决策模型服务，默认关闭，降幅 `证据不足`）。`部分确认`
+4. **对 WorkFleet 的定位不变**：作为“知识库 + 分身 loop”的外部服务（REST/MCP），不 fork；新增价值：`full_refresh_cron` 正好解决“分身画像长期 delta 漂移”，决策模型可降低 consolidation 的 LLM 调用（需额外部署决策模型服务，默认关闭，降幅 `证据不足`）。`部分确认`
 
 ---
 
@@ -320,14 +320,13 @@ flowchart TB
 |---|---|---|
 | P0 检索内核 | 2025-10-30 ~ 11-14 | initial commit（6d7223b）；BM25 与 re-rankers（fcc5250，11-07）；MCP server（e0a33f5）+ CLI + Helm（5880651）；**v0.0.1（11-11）**；temporal（11-14） |
 | P1 控制台 + 嵌入式 | 12-02 ~ 12-22 | control plane（12-02）；retain 性能、graph（12-08）；**v0.1.0（12-09）**；pg0 嵌入（#28）；**extensions（#54，12-22）** |
-| P2 记忆“会学习” | 2026-01 | reflect 结构化输出（#74）；observation 阈值（#83）；**v0.2.0（01-05）**；retain modes（#136）；**v0.3.0（01-13）**；**mental models（#132，01-16）**；**directives（#166，01-19）**；**worker 服务（#176，01-20）**；**v0.4.0（01-28）**；consolidation 基准（#227） |
 | P3 生态 + 批量合成 | 02 ~ 03 | codex/claude-code 当 LLM（#276）；MM CRUD MCP（#337）；**批量 observation consolidation（#430）**；`observation_scopes`（#447）；**webhooks（#487）**；observation/MM 历史 diff（#513/#516）；命名 retain 策略（#593）；**delta retain（#701）**；claude-code 全会话 retain（#695） |
 | P4 结构化增量 + 多后端 | 04 ~ 06 | paperclip（#773）；proof_count 加权（#821）；**v0.5.0（04-08）**；**structured-ops delta refresh（#1101）**；DeferOperation（#1105）；**Oracle 23ai（#1307，04-29）**；v0.6.0（05-05）/v0.7.0（05-27）/v0.8.0（06-08）；**cron MM 刷新（#2377，06-25）** |
 | P5 知识库 + 编码 agent | 07 ~ 09 | **knowledge pages + `hindsight fs`（#2455，07-30）**；**hindsight-coding-agents（#2522，07-31）**；v0.9.0（08-07）；v0.10.0（09-14）；coding-agents 0.1→0.8 |
 | P6 决策模型 + 1.0 | 10 | **v1.0.0（10-13）**；决策模型统一配置（#5607，10-15）；recall 决策排序（#5632，即基线）；**consolidation 分诊（#5664）、决策编排 reflect（#5382）、full_refresh_cron（#5674）**（10-16） |
 
 **演进规律（判断，`部分确认`）**：
-1. 从“检索库”→“会学习的记忆”（observations → mental models → knowledge pages）→“成本优化”（delta retain、structured-ops delta、决策模型分诊）。AideanFleet 若自研记忆层将重走这一年路线，进一步佐证“外部集成”结论。
+1. 从“检索库”→“会学习的记忆”（observations → mental models → knowledge pages）→“成本优化”（delta retain、structured-ops delta、决策模型分诊）。WorkFleet 若自研记忆层将重走这一年路线，进一步佐证“外部集成”结论。
 2. 增量与全量并存是长期主题：delta retain（#701）→ delta refresh（#1101）→ full_refresh_cron 纠偏（#5674）。
 3. 0.x 约每 3–6 周一版；1.0 后大量修复同日合入（10-16 一天 52 个）→ 集成必须锁镜像 tag。
 4. 未逐条统计 refactor 类提交与 `memory_engine.py` 体量演变，`证据不足`。
@@ -336,7 +335,7 @@ flowchart TB
 
 ## 11. 基线（9a499b1）→ HEAD（5331da2）变化摘要
 
-| 区域 | 变化 | 对 AideanFleet 影响 | 标签 |
+| 区域 | 变化 | 对 WorkFleet 影响 | 标签 |
 |---|---|---|---|
 | consolidation | 决策模型预分诊（`consolidation/triage.py` 新 320 行，`consolidator.py:2498-2533` 接入）；consolidation evals 驱动的提示规则与安全网（#5627） | 配了决策模型时，“重复/新增/闲聊”事实不再调 LLM | 已确认 |
 | reflect | 决策编排模式（`agent.py` +655 行）；“nothing found”需先 recall（#5641）；expand 读到的事实保留引用（#5677） | 总控“查历史决策”更准；默认仍是代理模式 | 已确认 |
@@ -356,7 +355,7 @@ flowchart TB
 
 ---
 
-## 13. 对 AideanFleet 的借鉴与迁移路线
+## 13. 对 WorkFleet 的借鉴与迁移路线
 
 | # | 项 | 方式 | 工作量* | 优先级 |
 |---|---|---|---|---|
@@ -369,7 +368,7 @@ flowchart TB
 | H7 | 输入端 CLI 共享记忆 | Claude Code/Codex 配 `/mcp/{bank_id}/`；**与 coding-agents stop 钩子二选一**，避免重复 retain | 1 人日 | P2 |
 | H8 | 成本优化 PoC | 评估决策模型 provider 与延迟，对比开/关时 consolidation 的 LLM 调用数 | 2–3 人日 | P2 |
 | H9 | 中文 | 嵌入改 ONNX `multilingual-e5-small` 或远程 bge-m3；BM25 选 pgroonga/pg_search 并配 CJK 分词；50 条中英样本评测 | 3 人日 | P0（PoC 门槛） |
-| H10 | 设计借鉴 | PG SKIP LOCKED 队列 + 槽位预留 → AideanFleet 群发/定时推送队列；ALLOW/REDACT/BLOCK → IM 外发脱敏 | 3–5 人日 | P1 |
+| H10 | 设计借鉴 | PG SKIP LOCKED 队列 + 槽位预留 → WorkFleet 群发/定时推送队列；ALLOW/REDACT/BLOCK → IM 外发脱敏 | 3–5 人日 | P1 |
 
 \* 主观估算，`部分确认`。**许可**：MIT；作为外部服务使用无需改源码；复制代码片段需保留版权声明。ChatGPT/Claude Code 登录态 provider 的服务条款合规 `证据不足`，生产默认用 API Key。
 

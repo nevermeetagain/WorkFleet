@@ -1,4 +1,4 @@
-# 11 · WechatClawbot 技术架构与实现路线（AideanFleet V0.0.2 · 研究方法第 8 步）
+# 11 · WechatClawbot 技术架构与实现路线（WorkFleet V0.0.2 · 研究方法第 8 步）
 
 > 分析对象：https://github.com/CodingHeader/WechatClawbot
 > 分析版本：`main` @ `4ec3bbe8b7b35ff308715b03dfa4e93ecbaab6b5`（2026-09-04 09:49:30 +0800）
@@ -19,7 +19,7 @@
 | 分层 | 接入层（iLink 协议）→ 编排层（ClawBotApp）→ 会话层（SessionRouter/Store）→ AI 层（litellm/Coze）→ 存储层（SQLite）；旁路：通知层、API/MCP 管理面 | 已确认 |
 | 扩展机制 | 无插件系统；仅“AI 后端二选一”（`use_coze` 开关，懒加载 `ai/coze.py`）与“MCP 被外部智能体调用” | 已确认 |
 | 实现路线 | 2026-07-31 ~ 08-02 三天内借助 AI 编码助手完成 10 个提交中的 9 个（仓库内有 `.workbuddy/memory/2026-07-31.md` 开发日志）；首提交即 46 文件 +5,148 行 | 已确认 |
-| 对 AideanFleet 的价值 | **微信 ClawBot(iLink) 输出端适配器**的行为参考（7 个 HTTP 端点、扫码状态机、长轮询游标、context_token 回发、同用户重复扫码作废规则）；不宜作为底座 | 已确认（行为）/ 部分确认（真机） |
+| 对 WorkFleet 的价值 | **微信 ClawBot(iLink) 输出端适配器**的行为参考（7 个 HTTP 端点、扫码状态机、长轮询游标、context_token 回发、同用户重复扫码作废规则）；不宜作为底座 | 已确认（行为）/ 部分确认（真机） |
 | 许可证 | 仓库根无 LICENSE（GitHub API `license: null`，2026-10-17 复核）；仅 `mcp-npm/package.json` 声明 MIT 且 `repository.url` 指向 `coze-clawbot` | 已确认 → **按协议行为自研重写，不拷贝源码** |
 
 ---
@@ -304,7 +304,7 @@ flowchart LR
 ```
 
 - `Dockerfile:1-14`：`pip install -r requirements.txt` → `CMD ["python","-m","wechat_clawbot","serve"]`；`VOLUME ["/app/data"]`、`EXPOSE 8088`。
-- 只需出站 HTTPS（长轮询），不需公网入站——**对 AideanFleet“设备端运行”友好**（`已确认`）。
+- 只需出站 HTTPS（长轮询），不需公网入站——**对 WorkFleet“设备端运行”友好**（`已确认`）。
 - 资源占用：未实测 → `证据不足`。
 
 ---
@@ -345,7 +345,7 @@ flowchart LR
 3. **测试锁行为但覆盖有盲区**：用例数 23→25→28，但 mock 了 AI 与 iLink，未覆盖媒体分支，导致 #9 回归漏网。
 4. **无重大重构**：模块划分自首提交起未变。
 
-> 隐私提示（`已确认`）：`.workbuddy/memory/2026-07-31.md` 已随仓库公开，内含开发者本机代理端口、进程 PID 与一个真实 iLink 微信用户 ID（本报告不转载）。AideanFleet 仓库应把 AI 助手记忆目录加入 `.gitignore`。
+> 隐私提示（`已确认`）：`.workbuddy/memory/2026-07-31.md` 已随仓库公开，内含开发者本机代理端口、进程 PID 与一个真实 iLink 微信用户 ID（本报告不转载）。WorkFleet 仓库应把 AI 助手记忆目录加入 `.gitignore`。
 
 ---
 
@@ -372,11 +372,11 @@ flowchart LR
 
 ---
 
-## 13. 对 AideanFleet 的借鉴与迁移路线
+## 13. 对 WorkFleet 的借鉴与迁移路线
 
 ### 13.1 移植清单
 
-| 借鉴项 | AideanFleet 落点 | 方式 | 工作量（估算） | 约束 |
+| 借鉴项 | WorkFleet 落点 | 方式 | 工作量（估算） | 约束 |
 |---|---|---|---|---|
 | iLink 端点：`get_bot_qrcode`、`get_qrcode_status`、`getupdates`、`sendmessage`、`sendtyping`、`getuploadurl`、`getconfig` | `channels/wechat-ilink` 适配器 | **按协议行为自研重写** | 2–3 人日 | 无 LICENSE |
 | 请求头 `AuthorizationType: ilink_bot_token` + 随机 `X-WECHAT-UIN`（`wechat/protocol.py:12-29`） | 同上 | 行为复刻 | 含上 | 同上 |
@@ -385,17 +385,17 @@ flowchart LR
 | **同 `ilink_user_id` 只保留最新 bot** | 通道绑定规则 + UI 告警“请勿重复扫码” | 规则复刻 | 0.5 人日 | 需真机验证（`部分确认`） |
 | context_token 回发 | 消息总线出站元数据，**持久化**而非 LRU | 改进后重写 | 0.5 人日 | 主动消息是否需要 token：`证据不足` |
 | iLink 枚举常量 | 协议常量 | 重写（协议事实） | 0.2 人日 | |
-| MCP 推送工具（6 个） | AideanFleet MCP Server：让 Claude Code 等主动推送到路由（加 route/tag 参数） | 思路借鉴、接口重设计 | 1 人日 | mcp-npm 声明 MIT |
+| MCP 推送工具（6 个） | WorkFleet MCP Server：让 Claude Code 等主动推送到路由（加 route/tag 参数） | 思路借鉴、接口重设计 | 1 人日 | mcp-npm 声明 MIT |
 
 ### 13.2 必须规避的设计
-1. 串行 `await` → AideanFleet 改为“入站持久化入队 + 立即回执 + 异步回发”。
+1. 串行 `await` → WorkFleet 改为“入站持久化入队 + 立即回执 + 异步回发”。
 2. 同步 sqlite → 异步驱动或独立写线程；消息原文 append-only 落库（满足按 session/resume ID 查记录）。
 3. 凭证 → 加密存储；管理端独立登录，不在页面输出令牌。
 4. 测试 → 覆盖媒体分支与真机回放用例。
 
 ### 13.3 迁移路线
 - **P0（第 1 周）**：真机验证 3 个未决事实：同用户多 bot 路由、主动消息是否需 context_token、频控。
-- **P1（第 2 周）**：在 AideanFleet `ChannelAdapter` 接口下实现 `wechat-ilink`（login/poll/send/typing/capabilities），复刻 supersede 规则。
+- **P1（第 2 周）**：在 WorkFleet `ChannelAdapter` 接口下实现 `wechat-ilink`（login/poll/send/typing/capabilities），复刻 supersede 规则。
 - **P2**：MCP 推送工具接入路由表（管理模式 S1 闭环）。
 
 ### 13.4 许可证结论
@@ -405,7 +405,7 @@ flowchart LR
 
 ## 14. 四轮方法收敛
 
-- **5W1H**：What——单进程微信 iLink 问答/通知服务；Why——作者目标是“业务系统给用户发微信通知 + AI 问答”；Where/When——价值集中在 L1 接入层，应在 AideanFleet 通道层设计阶段引用；Who——个人作者 CodingHeader、腾讯 iLink；How——行为复刻；What if——iLink 字段变化（`MediaItem/MessageItem extra=allow` 有缓冲），iLink 关停则需企业微信/公众号备选。
+- **5W1H**：What——单进程微信 iLink 问答/通知服务；Why——作者目标是“业务系统给用户发微信通知 + AI 问答”；Where/When——价值集中在 L1 接入层，应在 WorkFleet 通道层设计阶段引用；Who——个人作者 CodingHeader、腾讯 iLink；How——行为复刻；What if——iLink 字段变化（`MediaItem/MessageItem extra=allow` 有缓冲），iLink 关停则需企业微信/公众号备选。
 - **苏格拉底追问**：“架构自首提交未变”凭什么？——10 个提交中 `app.py/db.py/models.py` 只有小改（`f8b36e9` 改枚举、`ed80fb5` 加 supersede），无模块增删；反证：首提交前的演进不可见 → 结论限定为“公开历史内”。
 - **双向钢人**：支持“可作为微信适配器参考”——协议完整 + 测试 + 开发日志记录过真实运行；反对——无授权、本次未真机、代码量小自写成本低。裁决：**参考行为、重写代码**（`已确认`）。
-- **最终判断**：允许以“微信通道行为参考”进入 AideanFleet 通道层设计；不允许作为代码依赖或底座。局限：未真机扫码；资源未测；iLink 条款未审。
+- **最终判断**：允许以“微信通道行为参考”进入 WorkFleet 通道层设计；不允许作为代码依赖或底座。局限：未真机扫码；资源未测；iLink 条款未审。

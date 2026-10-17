@@ -1,6 +1,6 @@
 # 40-综合 · 09 路线图与 PoC 清单（V0.0.2，映射 K-xx）
 
-> 撰写：2026-10-17（Asia/Shanghai）。基线：`_V0.0.1基线/40-综合/08`（V0.1–V1.0 七个里程碑、P0–P11、DG1–DG3）。本版：①工作量按 `03` 的 G01–G39 重算；②**每个里程碑与 PoC 映射到 `01-需求分解与分析规划/05` 的 K-01–K-49**；③新增 PoC-12（OpenClaw 增量审读，条件触发）与 PoC-13（AFX 失败用例定位，已部分执行）；④标出本轮已部分完成的 PoC。
+> 〔此处原引用旧内部项目代码或其实测数据，已于 V0.0.3 按用户要求移除〕
 > 单位：单人人日（`部分确认`）。日期不承诺，PoC 通过后排期。版本号：V0.x 为**网关能力里程碑**，与仓库 `pyproject` 0.4.0 的对应关系取决于 A-10。
 
 ---
@@ -9,7 +9,6 @@
 
 | PoC | 本轮动作 | 结果 | 对应 K | 状态 |
 |---|---|---|---|---|
-| P0 AFX 体检 | `/tmp` 副本 `python -m pytest tests -q -p no:cacheprovider`（Python 3.12.15） | **502 passed / 2 failed / 24 skipped（52.5s）**；失败：e2e 步行骨架 `blocked==1`、watchdog 拉起演练超时 | K-47（文档旧值 344/18 已过时） | 部分完成（失败待定位 → PoC-13） |
 | P2 ACP Python SDK | `pip install agent-client-protocol==0.12.1` + introspection | `ClientSideConnection`：initialize/new/load/resume/list/fork/close/cancel/prompt/set_session_mode/set_config_option/authenticate；`Client`：request_permission/session_update/fs/terminal/elicitation；推荐入口 `acp.connect_to_agent`/`spawn_agent_process` | K-04/K-05（未测） | API 面通过；端到端未做 |
 | P5 FTS5 中文 | `05-gateway-schema-v002.sql` + `fts_bench.py`（20 万合成） | count p95 1.7ms；top-20+rank 7–8ms；与 LIKE 一致；**发现并修复 V0.0.1 FTS 无触发器缺陷** | K-34（部分） | 部分完成（缺 100 万与真实分布） |
 | DDL | `ddl_test.sql` 15 用例 | 全部按期望通过/拒绝；integrity ok | K-30/K-35 前置 | 完成（设计层） |
@@ -44,7 +43,6 @@
 
 | 编号 | 名称 | 问题 | 方法 | 通过标准（K） | 人日 | 风险 | 本轮状态 |
 |---|---|---|---|---|---|---|---|
-| P0 | AFX 仓体检 | 内核/runner/控制台能否承载；与既有规划冲突？ | pytest；读 `fleet/kernel`、`runner`、`docs/进度与决策.md`；用户确认 A-10 | K-47 基线确立；列出需改内核接口 | 1–2 | 高 | **部分完成**（502/2/24） |
 | P1 | **iLink 单绑定多输入** | 1:1、最新扫码；同 token 双进程 `getupdates`；24h；**约 10 条/入站是重置还是累加**；`/` 文本送达；媒体；`ret=-2/-14` | 真机；最小 iLink 客户端（Tencent `openclaw-weixin/docs/protocol.md`）；脚本记录 | **K-22**（48h 零重扫码、失败可归类）、**K-17**（静默丢失 0）；额度实测值回填 `08 §1.4` | 2–3 | **最高** | 未开始 |
 | P2 | **ACP Python SDK 端到端** | 0.12.1 能否驱动 `claude-agent-acp@0.93.0`、`codex-acp@2.2.2`、`agent acp`、`openclaw acp` 全流程；1.0.0rc3 差异 | 每 Agent 一脚本；对照组 acpx 0.19.6 / TS SDK | ≥3 Agent 全流程；**K-04**、**K-05**、**K-26** 有值；否则 C2′ | 3–4 | 高 | API 面通过 |
 | P3 | 飞书长连接卡片 | 卡片回调走长连接？CardKit 流式？3 秒 ACK | `lark-oapi` 示例 | **K-09**（ACK ≤3s） | 1–2 | 中 | 未开始 |
@@ -57,7 +55,6 @@
 | P10 | A′ 评估（条件） | cc-connect 补 LICENSE？同 token 双 project 行为 | issue + 本地 build | 仅 DG2 触发 | 1–2 | 中 | **阻塞**（2026-10-17 仍无 LICENSE） |
 | P11 | ZCode 接入 | `zcode -p` 稳定性；app-server 值不值；读 `apps/zcode-cli`、`packages/rpc`（Apache-2.0）确认有无官方协议 | 本机安装 + 源码阅读 | 选定 V0.3 接入方式 | 1–2 | 低 | 仓库身份已确认 |
 | **P12** | OpenClaw 增量审读（条件） | +894 提交是否新增钉钉/订阅广播/单 DM 多 agent | 只读 diff（routing/cron/extensions） | 仅当用户考虑 B 或借鉴件需更新时 | 1 | 低 | 新增 |
-| **P13** | AFX 失败用例定位 | 2 个失败是环境还是缺陷 | 复跑 `-vv`；检查 planner 依赖（模型/CLI）、watchdog 子进程权限；在 Windows 原生环境复跑 | 失败归因明确；K-47 基线锁定 | 1–2 | 中 | 新增（已复现） |
 
 ### 2.1 决策闸门
 
@@ -65,7 +62,6 @@
 |---|---|---|
 | DG1 | P1 失败（单绑定无法稳定复用 / 额度远低于预期，如 <5 条/入站） | 管理模式主通道改飞书或 QQ；微信降为“仅 p0”；文案调整 |
 | DG2 | P2 + P3 + P6 中 ≥2 项失败 | C2′（ACP 改 Node 旁车：acpx 0.19.x / TS SDK 1.9.x）；IM 考虑 A′（需 LICENSE，当前阻塞） |
-| DG3 | P0/P13 发现 AFX 内核不适合承载，或用户 A-10 选新仓 | 改 C1 或独立 Python 网关仓；总控任务表改 `sv_task` 独立实现 |
 | **DG4（新）** | P8 显示会议使返工率上升或成本超预算 | 会议默认关闭，仅 `/ask 开会` 手动触发；总控以“单经理 + 把关”上线 |
 
 ---
@@ -82,8 +78,6 @@
 | 单人工作量过大 | 高 | 高 | V0.2-alpha 切片；里程碑可停 | 合计上调至 241–348 |
 | 许可证误用（AGPL/GPL/无许可/EULA） | 低 | 高 | clean-room、provenance 记录、相似度检查 | BettaFish GPL+禁商用纳入 |
 | 个人信息合规（S4、分身） | 中 | 高 | opt-in、退订、最小化、法务 | S4 内容源条款新增 |
-| 端口冲突（9900、Paperclip 3100、Hindsight 8888/9999、BettaFish 5000/8501–8503） | 中 | 低 | G37、A-39/A-40 | BettaFish 端口新增 |
-| **AFX 基线失败** | 中 | 中 | P13 | 新增 |
 | 节假日次年数据缺失 | **高（当前即发生）** | 低 | 降级 + 告警 + 重算 | 2027 为空（复核） |
 
 ---
@@ -95,7 +89,7 @@
 
 ## 5. 四轮收口
 
-- **5W1H**：What——8 个里程碑（含已完成的 V0.0.1/V0.0.2）、14 个 PoC（4 个本轮已部分推进）、4 个决策闸门、全量 K 映射；Why——先在最不确定处（微信额度、Python ACP、平台限额、会议效果、AFX 基线）取证，避免在错误前提上写 240+ 人日；Where/When——PoC 约 2–3 周；Who——用户裁定、开发者执行；How——§2 方法与 K 通过标准；What if——P1 失败 → DG1；P2/P3/P6 多项失败 → DG2；P0/P13 或 A-10=新仓 → DG3；P8 失败 → DG4。
+> 〔此处原引用旧内部项目代码或其实测数据，已于 V0.0.3 按用户要求移除〕
 - **苏格拉底追问**：①“工作量为何比 V0.0.1 多？”——新增 G30–G39（≈23–35）与会议/画像调整（+3），且把 PoC 与加固显式计入；②“K 映射是否完整？”——K-01–K-49 全部落到某个 PoC 或里程碑退出标准（K-28 在 V1.0、K-47/K-48 每次合并）；③“已部分完成的 PoC 能否跳过？”——不能：P0 有 2 个失败、P2 只有 API 面、P5 只有合成数据。
 - **双向钢人**：支持——每个里程碑有可测退出标准；反对——人日估算未拆到任务级，单人周期可能更长。处置——V0.1 结束后按 PoC 结果重估，并用 V0.2-alpha 尽早交付价值。
 - **最终判断**：1 结论：先做 V0.1（P0、P1、P2、P13 必做），通过后进 V0.2 管理模式 MVP；2 依据：`03` 工作量、`04` 前提、`08` 验收、K 表；3 代码证据：见各 PoC 引用；4 命令证据：§0 四项（pytest、introspection、DDL、FTS bench）；5 前提：A-10/A-11/A-45/A-47；6 局限：估算；7 未验证：PoC 问题本身；8 风险：§3；9 下一步：用户回复 ★ 项 → 启动 P0/P1/P2/P13；10 是否进入下一阶段：**允许进入 V0.1 PoC**；V0.2 **`暂不执行`**，待 DG1–DG3 有结论。

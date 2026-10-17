@@ -1,4 +1,4 @@
-﻿R,优先级,需求,OpenClaw,cc-connect,AionUi+AionCore,AstrBot,acpx,Paperclip,Orca,WechatClawbot,PentAGI,Hindsight,BettaFish,AideanFleet 现有仓 v0.4.0
+﻿R,优先级,需求,OpenClaw,cc-connect,AionUi+AionCore,AstrBot,acpx,Paperclip,Orca,WechatClawbot,PentAGI,Hindsight,BettaFish,旧内部项目
 R-101,P0,后台配置管理,◐,◐,◐,◐,○,◐,◐,◐,◐,○,○,◐
 R-102,P0,管理模式 多→1,◐,◐,◐,◐,○,◐,◐,○,○,○,○,○
 R-103,P0,输出端回发(回复光标/@别名//use),●,●,●,◐,○,●,◐,◐,○,○,○,◐
@@ -48,7 +48,7 @@ R-607,P1,skill 配置,◐,○,◐,◐,○,●,◐,○,◐,○,○,◐
 R-608,P1,旁路对话不打断,◐,○,●,○,○,◐,●,○,●,○,○,◐
 R-609,P1,呈现为多对一,○,○,◐,○,○,◐,○,○,◐,○,○,○
 R-610,P1,护栏/预算,◐,○,◐,○,○,◐,◐,○,●,○,○,◐
-R-611,P1,与 AFX 任务模型对齐,○,○,○,○,○,○,○,○,○,○,○,●
+R-611,P1,与 旧内部项目 任务模型对齐,○,○,○,○,○,○,○,○,○,○,○,●
 R-702,P1,S2 场景,●,◐,○,◐,○,◐,○,○,○,○,○,○
 R-703,P1,S3 场景,◐,○,●,○,○,●,◐,○,○,○,○,◐
 R-704,P1,S4 场景,○,○,○,◐,○,○,○,◐,○,○,○,○

@@ -10,6 +10,6 @@ META = {
 "PTG":("vxcontrol/pentagi","843dfeb（无新提交）","MIT + 限制性 EULA","Go / TS","30,755","2026-10-10","渗透测试多智能体"),
 "HDS":("vectorize-io/hindsight","5331da2（v1.0.0，+52）","MIT","Python","50,534","2026-10-17","记忆服务"),
 "BF":("666ghj/BettaFish","b67928f（首次分析）","GPL-2.0 + “严禁商业用途”","Python","42,430","2026-10-16（最近人工提交 08-25）","多 Agent 舆情流水线"),
-"AFX":("aideanew/AideanFleet（用户仓）","a9a24ed（v0.4.0，无新提交）","Proprietary（自有）","Python","—","2026-10-13","多 CLI 舰队编排器"),
+"OLD":("旧内部项目","—","Proprietary（自有）","Python","—","2026-10-13","多 CLI 舰队编排器"),
 }
-ORDER=["PPC","OCL","ORC","AION","CCC","ASB","AFX","ACPX","HDS","PTG","WCB","BF"]
+ORDER=["PPC","OCL","ORC","AION","CCC","ASB","OLD","ACPX","HDS","PTG","WCB","BF"]

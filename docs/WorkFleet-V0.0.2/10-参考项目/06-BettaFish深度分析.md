@@ -1,4 +1,4 @@
-# 06 · BettaFish（微舆）深度分析（AideanFleet V0.0.2 新增参考项目）
+# 06 · BettaFish（微舆）深度分析（WorkFleet V0.0.2 新增参考项目）
 
 > 分析对象：https://github.com/666ghj/BettaFish
 > 分析版本：`main` @ `b67928ff1ce515dd7672408221fb1e9500d0972d`（提交时间 2026-10-02 02:18 +08:00，“chore: update star history [skip ci] (#722)”，github-actions 机器人提交）。最近一次**人工代码提交**：`e5a15651`（2026-08-25，“fix: repair sponsor links”）；最近一批**功能/测试类提交**：`1e6a2b52 / e38467a3 / f976cf85`（2026-07-20，数据库提示与测试加固）。
@@ -14,11 +14,11 @@
 
 BettaFish 是一个 **“单机、单用户、单任务”的多 Agent 舆情研究流水线**：三个研究 Agent（Query＝网页新闻、Media＝多模态搜索、Insight＝私有舆情库 + 本地情感模型）各自跑在独立的 Streamlit 子进程里并行研究；**ForumEngine 通过“尾随（tail）各 Agent 的日志文件 → 抽取总结节点输出 → 写入 `logs/forum.log` → 每满 5 条发言调用一次主持人 LLM”** 制造“论坛讨论”，各 Agent 在下一次写总结前读取最新主持人发言注入提示词；最后 ReportEngine 汇总三份 Markdown 报告 + 论坛日志，经 “模板选择 → 版式设计 → 篇幅规划 → 逐章 JSON(IR) 生成 → 装订 → HTML/PDF/MD 渲染” 输出交互式报告。MindSpider 是独立的爬虫 CLI（热榜话题提取 + MediaCrawler 深度爬取）。
 
-- **与 AideanFleet 的关系**：它**不是** ACP / IM 网关，**没有**输入端（编码 CLI）接入、输出端（微信/飞书/QQ/钉钉/Discord/Telegram）接入、路由模式、定时调度或订阅推送。价值集中在两点：
+- **与 WorkFleet 的关系**：它**不是** ACP / IM 网关，**没有**输入端（编码 CLI）接入、输出端（微信/飞书/QQ/钉钉/Discord/Telegram）接入、路由模式、定时调度或订阅推送。价值集中在两点：
   1. **总控“会议”机制的一个真实可运行样本**：主持人 LLM 定期归纳多 Agent 发言、纠错、提出下一步问题，并以“黑板（blackboard）”方式反哺各 Agent——这是 V0.0.1 `40-综合/05-总控模式设计.md §3` 标注“自研；无现成实现”的部分目前最接近的参照。
   2. **场景 4（每日 9 点推送 AI 资讯）的“内容生产端”模式**：MindSpider 热榜采集（12 个源，经 newsnow 聚合 API）+ ReportEngine 模板化报告生成（含“日常或定期舆情监测报告模板”）。
 - 需求匹配度（加权估算）：**约 15%**（§2）。
-- 复用结论：**许可证是第一约束**——主仓 **GPL-2.0**，MindSpider 内嵌 MediaCrawler 的 **非商业学习许可 1.1**。对 AideanFleet：**只借鉴设计模式、clean-room 重写，不拷贝代码**；若要直接用其内容生产能力，只能作为**独立进程/服务**部署、经 CLI/HTTP 边界取数，且 MediaCrawler 深度爬取**不得商用**（`部分确认`：法律判断需法务确认）。
+- 复用结论：**许可证是第一约束**——主仓 **GPL-2.0**，MindSpider 内嵌 MediaCrawler 的 **非商业学习许可 1.1**。对 WorkFleet：**只借鉴设计模式、clean-room 重写，不拷贝代码**；若要直接用其内容生产能力，只能作为**独立进程/服务**部署、经 CLI/HTTP 边界取数，且 MediaCrawler 深度爬取**不得商用**（`部分确认`：法律判断需法务确认）。
 
 ---
 
@@ -52,7 +52,7 @@ BettaFish 是一个 **“单机、单用户、单任务”的多 Agent 舆情研
 - 配置/日志：pydantic 2.5.2 + pydantic-settings 2.2.1；loguru。
 - 依赖含 `fastapi==0.110.2`、`uvicorn==0.29.0`，主程序未使用（`部分确认`）。
 
-### 1.3 子系统地图（与 AideanFleet 相关度）
+### 1.3 子系统地图（与 WorkFleet 相关度）
 
 | 子系统 | 路径 | 规模（行） | 作用 | 相关度 |
 |---|---|---|---|---|
@@ -95,7 +95,7 @@ BettaFish 是一个 **“单机、单用户、单任务”的多 Agent 舆情研
 | S4 | 每日 9 点推送 AI 资讯给大量用户 | **部分（内容源 + 报告生成；缺调度与推送）** | 内容源：`MindSpider/BroadTopicExtraction/get_today_news.py:27-43`（newsnow 聚合 API，12 源：微博/知乎/B站/头条/抖音/**GitHub趋势**/酷安/贴吧/华尔街见闻/澎湃/财联社/雪球），LLM 提取关键词与摘要写 `daily_topics`（`topic_extractor.py`、`database_manager.py:168-216`）；生成：模板 `ReportEngine/report_template/日常或定期舆情监测报告模板.md`；无前端 CLI：`report_engine_only.py`（`--query/--skip-pdf/--skip-markdown/--verbose`，`:427-450`）。**缺**：AI 领域专门源（`证据不足`能否覆盖“最新 AI 信息”）、定时器、订阅表、群发通道。 |
 
 **加权估算**（沿用 V0.0.1：核心 R1–R4 40%、扩展 R5–R9 30%、总控 R10–R14 30%）：核心 ≈ 3%、扩展 ≈ 10%、总控 ≈ 35% → **0.4×3 + 0.3×10 + 0.3×35 ≈ 15%**（`部分确认`，主观加权）。
-**结论**：BettaFish **不能作为 AideanFleet 底座**；它是“总控会议模式”和“场景 4 内容生产”的**模式参考**。
+**结论**：BettaFish **不能作为 WorkFleet 底座**；它是“总控会议模式”和“场景 4 内容生产”的**模式参考**。
 
 ---
 
@@ -222,25 +222,25 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
 
 ## 4. 全方位维度分析
 
-| 维度 | 现状（证据） | 对 AideanFleet 的意义 |
+| 维度 | 现状（证据） | 对 WorkFleet 的意义 |
 |---|---|---|
 | **需求** | 舆情研究闭环：采集 → 多 Agent 研究 → 论坛归纳 → 报告；§2 匹配约 15% | 不做底座；取“会议主持”与“定时内容生产”两种模式 |
 | **前端** | 单文件 `templates/index.html`（5.4 MB，含内嵌字体）+ 三个 Streamlit 页面 iframe 嵌入；Socket.IO（CDN 4.0.0）实时控制台/论坛；SSE 报告流；配置面板读写 `.env` | 论坛面板（按来源着色消息流）与报告进度流可参考为后台“会议直播/汇报进度”交互；iframe+多端口方案**不推荐** |
 | **后端** | Flask+SocketIO（eventlet）作为**进程管理器 + 日志转发器**；业务逻辑在 Streamlit 脚本执行周期内运行 | “主进程托管 N 个子进程、合并 stdout、健康检查、并发停机”（`app.py:634-924`）可作 AgentProcessPool 最小形态参考；Streamlit 作业载体不适合网关 |
 | **数据** | PostgreSQL/MySQL（MindSpider 4 张业务表 + MediaCrawler 约 20 张平台表）；Markdown 报告、State JSON、章节 JSON、IR JSON、`forum.log` | `daily_news/daily_topics` 可作场景 4 “资讯条目”数据模型参照；论坛无结构化存储是反例 |
-| **交互** | 浏览器单页；无命令/对话/IM；一次一个问题 | AideanFleet 需把会议暴露到 IM：开始/旁听/打断/拍板 |
+| **交互** | 浏览器单页；无命令/对话/IM；一次一个问题 | WorkFleet 需把会议暴露到 IM：开始/旁听/打断/拍板 |
 | **逻辑** | 节点流水线（结构→搜索→总结→反思×N→格式化）；黑板式论坛；多阶段报告 + 质量闸 + 救援链 | 借鉴：**主持人四段式归纳**、**阈值触发**、**最新纪要注入下一轮**；“规划→分章→校验→装订”做统一汇报生成器 |
 | **组件** | `LogMonitor`、`ForumHost`、`forum_reader`、`LLMClient`、`retry_helper`、`ReportAgent`+IR+渲染器、`NewsCollector` | 均不能拷贝（GPL），按接口重写 |
 | **复用** | 三引擎复制粘贴（§3.3）；模块间以“目录约定”耦合（报告目录、日志目录） | 移植应抽象为“统一 Agent 运行时 + 角色配置” |
-| **拓展** | 新增研究 Agent 至少改 6 处硬编码：`app.py:499-510`、`monitor.py:33-37,362,568`、`forum_reader.py:118`、`flask_interface.py:415-419`、`llm_host.py:120,146-149` | AideanFleet 员工数量与身份动态，必须数据驱动（参与者表） |
+| **拓展** | 新增研究 Agent 至少改 6 处硬编码：`app.py:499-510`、`monitor.py:33-37,362,568`、`forum_reader.py:118`、`flask_interface.py:415-419`、`llm_host.py:120,146-149` | WorkFleet 员工数量与身份动态，必须数据驱动（参与者表） |
 | **性能** | 引擎间进程并行、引擎内串行；按代码上限推算一次完整运行 LLM 调用：每引擎 1 结构 + ≤5 段 ×(1 搜 + 1 总结 + 2×(1 反思 + 1 反思总结)) + 1 格式化 ≈ 32，三引擎 ≈ 96；主持人 ≈ 45 条发言/5 ≈ 9；Insight 每次搜索 +1 关键词优化；报告 3 + 章节数×(1–2) → **约 120–150 次**（`部分确认`：推算未实测）。LLM 重试初始 60 s、超时 1,800 s → 单点故障可卡十几分钟（与 issue #721 相符，`部分确认`）。`get_file_line_count` **每秒全量读文件计行**（`monitor.py:379-387, 606`）→ 日志越长 IO 越高（`存在缺陷`，低-中） | 总控会议必须设预算（轮数/人数/token/时长）——与 V0.0.1 `05 §3.1/§3.3` 一致；事件驱动替代轮询 |
-| **配置** | 根 `.env` + 各引擎 Settings + MindSpider Settings + 页面硬编码；前端可改 30 个键 | 反例：AideanFleet 单一配置源 + schema 校验 + 热重载事件 |
+| **配置** | 根 `.env` + 各引擎 Settings + MindSpider Settings + 页面硬编码；前端可改 30 个键 | 反例：WorkFleet 单一配置源 + schema 校验 + 热重载事件 |
 | **知识库** | 无（GraphRAG 合入后被整体撤销）；仅聚类采样 | 知识库仍按 V0.0.1 结论用 Hindsight；GraphRAG 撤销原因上游未说明（`证据不足`） |
 | **响应** | Socket.IO 实时日志/论坛；报告 SSE（Last-Event-ID 补发、15 s 心跳）；一次分析耗时分钟到数十分钟（`证据不足`） | “SSE + 事件序号 + 断线补发”可直接作为后台总控实时纪要的协议形态（自行实现） |
 | **存储** | 本地文件（`logs/`、`*_streamlit_reports/`、`final_reports/{chapters,ir}`）+ PG/MySQL；`docker-compose.yml` 挂载这些目录 | 会议纪要必须结构化落库（会议/轮次/发言/决策），不能是可被清空的日志 |
 | **资源** | 镜像含 torch/transformers/playwright chromium/ffmpeg/Pango；4 个 Python 进程（Flask + 3×Streamlit）+ PG | 若作场景 4 内容服务，应独立容器/机器部署，与设备端网关隔离 |
-| **安全** | `SECRET_KEY` 硬编码（`app.py:36`）；`SocketIO(cors_allowed_origins="*")`（`app.py:37`）；默认 `HOST=0.0.0.0`；**无认证**；`GET /api/config` 明文返回全部 API Key（`app.py:134-153, 1203-1211`）；`POST /api/config` 任意写 `.env`；`POST /api/system/shutdown` 无鉴权（`app.py:1276-1316`）；Streamlit `--server.enableCORS false`；`Dockerfile` 把 `.env.example` 复制为 `.env`；SQL 参数化（✔）；提示词前置“已通过伦理性合规审查”（`llm_host.py:135,163,176,206`）用于降低模型拒答 | 研究原型安全水位：**不得暴露公网**；AideanFleet 总控提示词不应使用此类“合规声明”前缀 |
-| **许可证** | GPL-2.0（主仓）；MindSpider：MIT + MediaCrawler 非商业学习许可 | 代码不可并入非 GPL 分发的 AideanFleet；MediaCrawler 能力不可商用 |
+| **安全** | `SECRET_KEY` 硬编码（`app.py:36`）；`SocketIO(cors_allowed_origins="*")`（`app.py:37`）；默认 `HOST=0.0.0.0`；**无认证**；`GET /api/config` 明文返回全部 API Key（`app.py:134-153, 1203-1211`）；`POST /api/config` 任意写 `.env`；`POST /api/system/shutdown` 无鉴权（`app.py:1276-1316`）；Streamlit `--server.enableCORS false`；`Dockerfile` 把 `.env.example` 复制为 `.env`；SQL 参数化（✔）；提示词前置“已通过伦理性合规审查”（`llm_host.py:135,163,176,206`）用于降低模型拒答 | 研究原型安全水位：**不得暴露公网**；WorkFleet 总控提示词不应使用此类“合规声明”前缀 |
+| **许可证** | GPL-2.0（主仓）；MindSpider：MIT + MediaCrawler 非商业学习许可 | 代码不可并入非 GPL 分发的 WorkFleet；MediaCrawler 能力不可商用 |
 | **活跃度** | 42.4k★、7.6k fork、51 贡献者；2025-11/12 爆发后低频维护；最近人工提交 2026-08-25；Redis Streams 通信 PR 未合并 | 当“设计样本”而非依赖 |
 
 ---
@@ -251,7 +251,7 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
 
 - **What**
   - 已实现（代码证实）：三引擎并行研究、日志驱动论坛 + 主持人 LLM、主持人发言反哺、模板化多阶段报告 + IR + HTML/PDF/MD、SSE 进度、热榜采集 CLI、深度爬取 CLI（子模块）、Web 配置面板、Docker 部署。
-  - 缺失（对照 AideanFleet）：ACP/CLI 输入端、IM 输出端、四模式路由、调度器、订阅群发、`/clear`、会话检索、知识库、分身 loop、任务分配、把关上报、旁路对话、多租户、鉴权。
+  - 缺失（对照 WorkFleet）：ACP/CLI 输入端、IM 输出端、四模式路由、调度器、订阅群发、`/clear`、会话检索、知识库、分身 loop、任务分配、把关上报、旁路对话、多租户、鉴权。
   - 已被证据证明：§3 调用链；论坛触发阈值与流程（实测）；45 个单测通过。
   - 仅为声明未被证明：README“7x24 不间断作业”（代码无调度器，`存在缺陷`）；“30+主流社媒”“数百万条评论”（取决于 MediaCrawler 与部署者数据，`证据不足`）；报告质量（`证据不足`）。
 - **Why**
@@ -261,11 +261,11 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
 - **Where / When**
   - 可借鉴位置：`ForumEngine/monitor.py:524-559, 584-702`（触发与生命周期）、`ForumEngine/llm_host.py:133-204`（主持人职责与发言结构）、`utils/forum_reader.py`（纪要注入）、`ReportEngine/agent.py:405-776`（多阶段汇报）、`ReportEngine/flask_interface.py:274-405, 750-868`（任务 + 事件历史 + SSE 补发）、`MindSpider/BroadTopicExtraction/*`（每日资讯采集）。
   - 时间节点：总控会议协议设计（V0.0.1 路线中 S3 → V0.5）时引入 §7 模式清单；场景 4（S4 → V0.4）时评估是否以独立服务接入 BettaFish 内容生产。
-  - 端口：BettaFish 用 5000（Flask）、8501–8503（Streamlit）、PG 主机映射 5444（`docker-compose.yml`）；与 Aidean 3000、AideanBot 3333、AideanFleet 3100–3200 段（V0.0.1 `04 §16.2`）**无冲突**（`已确认`：按配置文件）。macOS 12+ 的 AirPlay 接收器常占用 5000（通用常识，本环境未验证）→ 本机部署可能需改 `PORT`。
+  - 端口：BettaFish 用 5000（Flask）、8501–8503（Streamlit）、PG 主机映射 5444（`docker-compose.yml`）；与 Aidean 3000、AideanBot 3333、WorkFleet 3100–3200 段（V0.0.1 `04 §16.2`）**无冲突**（`已确认`：按配置文件）。macOS 12+ 的 AirPlay 接收器常占用 5000（通用常识，本环境未验证）→ 本机部署可能需改 `PORT`。
   - 不在范围：情感模型训练、PDF 排版优化器、star-history 脚本。
 - **Who**
   - 维护者：666ghj（作者，402 提交）、MaYiding（ReportEngine IR/渲染/GraphRAG 主力，301）、DoiiarX（MindSpider/MediaCrawler 集成，63）。
-  - AideanFleet 侧：总控模块负责人消化 §3.4；场景 4/调度负责人消化 §3.5–3.6；许可证边界需负责人/法务确认。
+  - WorkFleet 侧：总控模块负责人消化 §3.4；场景 4/调度负责人消化 §3.5–3.6；许可证边界需负责人/法务确认。
 - **How**
   - 读取最新真实代码：tarball @ `b67928f`（clone 502 后的等价手段，SHA 可复核）；提交历史 API 全量拉取。
   - 验证：pytest 45 通过；论坛机制以桩主持人实测；其余为静态阅读。
@@ -277,7 +277,7 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
   - 端口被占用：Streamlit 启动失败 → `wait_for_app_startup` 超时 → 全部回滚（`app.py:300-339`）。
   - 原始前提“BettaFish 可直接当总控”不成立（无派工/把关/IM）→ 调整为“只取模式”。
   - 代码与 README 冲突：以代码为准（调度、`/api/search`）。
-  - 若 AideanFleet 将来以 GPL 开源：可复用空间变大，但 MediaCrawler 非商业限制仍在。
+  - 若 WorkFleet 将来以 GPL 开源：可复用空间变大，但 MediaCrawler 非商业限制仍在。
 
 ### 5.2 第二轮 苏格拉底追问
 
@@ -287,32 +287,32 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
 | “主持人发言会影响 Agent 研究方向” | 证据是代码注入还是效果？ | 代码：三引擎总结节点把最新 HOST 作提示前缀（`summary_node.py:81-98`）；但**下一次搜索词**节点不读 HOST（grep 仅 summary_node 命中）→ “引导研究方向”仅部分成立（`部分确认`）；效果 `证据不足`。 |
 | “无调度器” | 会不会在 Docker/CI 里配置？ | `docker-compose.yml` 只有 bettafish 与 db 两个服务、无 cron；`.github/workflows` 只有 docker_ci 与 star-history。→ `已确认`（当前提交） |
 | “GraphRAG 不在 main” | 是否只是改名/移位？ | `579e41d1` 标题即 “Revert "Merge pull request #503 from 666ghj/GraphRAG"”，随后 PR #592 “Revert-GraphRAG” 合入；全仓 grep `graphrag` 无命中。→ `已确认`；撤销原因 `证据不足`。 |
-| “不能拷贝代码” | GPL-2.0 对内部使用也约束吗？ | GPL 义务主要在**分发**时触发；纯内部使用不分发通常不要求开源（通用理解）。AideanFleet 很可能以安装器形态分发设备端程序（V0.0.1）→ 保守结论“不拷贝”。→ `部分确认`（需法务） |
+| “不能拷贝代码” | GPL-2.0 对内部使用也约束吗？ | GPL 义务主要在**分发**时触发；纯内部使用不分发通常不要求开源（通用理解）。WorkFleet 很可能以安装器形态分发设备端程序（V0.0.1）→ 保守结论“不拷贝”。→ `部分确认`（需法务） |
 | “可作为场景 4 内容源” | 12 个热榜源能满足“每日最新 AI 信息”吗？ | 与 AI/技术直接相关的只有 `github-trending-today`、`coolapk`，其余为综合/财经（`get_today_news.py:30-43`）；newsnow 是第三方聚合服务，可用性与条款不受控（提交 `3afa16b6`“Add note on news API failure and solution”、`0aaf81ba`“修复fetch_news无法正常获取的问题”说明出过故障）。→ 只能作“模式 + 可选源”，AI 资讯需另配源（`部分确认`） |
-| “报告引擎适合做总控统一汇报” | IM 能显示 HTML/PDF 吗？ | IM 卡片/文本长度受限；ReportEngine 的 IR（结构化块）比 HTML 更适合降级渲染成 IM 卡片/Markdown → 借鉴 **IR 中间层** 而非 HTML 产物（`部分确认`：AideanFleet 侧 IR→IM 渲染器尚未设计） |
+| “报告引擎适合做总控统一汇报” | IM 能显示 HTML/PDF 吗？ | IM 卡片/文本长度受限；ReportEngine 的 IR（结构化块）比 HTML 更适合降级渲染成 IM 卡片/Markdown → 借鉴 **IR 中间层** 而非 HTML 产物（`部分确认`：WorkFleet 侧 IR→IM 渲染器尚未设计） |
 
 ### 5.3 第三轮 双向钢人论证
 
-**主张 A：直接把 ForumEngine 代码嵌入 AideanFleet 作为总控会议模块。**
+**主张 A：直接把 ForumEngine 代码嵌入 WorkFleet 作为总控会议模块。**
 - 支持：可运行（实测）；有测试（`tests/test_monitor.py` 30 个用例）；主持人提示词结构清晰；“旁听日志”对任何输出文本的 Agent 都适用，接入成本低。
 - 反对：① GPL-2.0；② 依赖 loguru 行格式与中文标识，换成 ACP `session/update` 流即失效；③ 全局单例只能一场会议；④ 无轮次/收齐/决策/派工；⑤ 时间戳无日期、日志会被清空，不可审计；⑥ 主持人同步阻塞监控线程。
 - 裁决：①②③④ 均有代码证据 → **否决**。
 
-**主张 B：只借鉴模式，在 AideanFleet 网关内按 V0.0.1 `05 §3` 会议协议自研，吸收 BettaFish 有效设计。**
-- 支持：规避许可证；结构化事件替代日志抓取；直接落在 AideanFleet 已设计的会议/决策数据模型上；BettaFish 证明“主持四段式归纳 + 阈值触发 + 纪要注入”可跑通、社区接受度高（42k★）。
+**主张 B：只借鉴模式，在 WorkFleet 网关内按 V0.0.1 `05 §3` 会议协议自研，吸收 BettaFish 有效设计。**
+- 支持：规避许可证；结构化事件替代日志抓取；直接落在 WorkFleet 已设计的会议/决策数据模型上；BettaFish 证明“主持四段式归纳 + 阈值触发 + 纪要注入”可跑通、社区接受度高（42k★）。
 - 反对：自研工作量；“讨论提升质量”在 BettaFish 也无量化证据。
 - 裁决：工作量可控（核心为 MeetingOrchestrator + HostPolicy + 纪要注入）；质量用 V0.0.1 PoC-8 A/B 评估 → **成立，主路线**。
 
-**主张 C：把 BettaFish 整体作为“场景 4 内容生产服务”独立部署，AideanFleet 定时调用并分发。**
+**主张 C：把 BettaFish 整体作为“场景 4 内容生产服务”独立部署，WorkFleet 定时调用并分发。**
 - 支持：现成“采集 → 研究 → 报告”流水线；`report_engine_only.py` 可脚本化；独立进程边界降低 GPL 传染风险（“聚合”而非“衍生”，`部分确认`）。
 - 反对：① 研究依赖浏览器 iframe 触发，三引擎无 HTTP API；② 资源重；③ MediaCrawler 非商业许可 + 平台爬取合规；④ 内容领域是舆情而非 AI 资讯；⑤ 单任务全局锁，无法按用户/主题并发。
-- 裁决：①④⑤ 使整体接入性价比低 → **降级为“可选外部内容源”**：仅在用户明确要“舆情日报”类内容时，用 `python MindSpider/main.py --broad-topic` + 最小包装直接调用 `DeepSearchAgent.research(query)`（`QueryEngine/agent.py:141`，可脱离 Streamlit）+ `report_engine_only.py` 生成，再由 AideanFleet 调度与分发。**默认路线仍是 AideanFleet 自有“资讯源适配器 + LLM 摘要 + 广播”**（V0.0.1 `07 §4`）。
+- 裁决：①④⑤ 使整体接入性价比低 → **降级为“可选外部内容源”**：仅在用户明确要“舆情日报”类内容时，用 `python MindSpider/main.py --broad-topic` + 最小包装直接调用 `DeepSearchAgent.research(query)`（`QueryEngine/agent.py:141`，可脱离 Streamlit）+ `report_engine_only.py` 生成，再由 WorkFleet 调度与分发。**默认路线仍是 WorkFleet 自有“资讯源适配器 + LLM 摘要 + 广播”**（V0.0.1 `07 §4`）。
 
 **仍成立的反对意见**：讨论机制对最终质量的增益无量化证据（B/C 共同风险）→ 交 PoC。
 
 ### 5.4 最终判断
 
-1. **结论**：BettaFish **不可作为 AideanFleet 底座或依赖**（匹配约 15%）；它是 **总控会议“主持归纳/反哺”模式** 与 **定时内容生产（采集→多视角研究→模板化报告）模式** 的高价值参考；一律 **clean-room 借鉴，不拷贝代码**（`部分确认`）。
+1. **结论**：BettaFish **不可作为 WorkFleet 底座或依赖**（匹配约 15%）；它是 **总控会议“主持归纳/反哺”模式** 与 **定时内容生产（采集→多视角研究→模板化报告）模式** 的高价值参考；一律 **clean-room 借鉴，不拷贝代码**（`部分确认`）。
 2. **依据**：§2 逐条匹配、§3 调用链、§4 维度表、许可证事实。
 3. **代码证据**：`ForumEngine/monitor.py:50, 78-104, 524-559, 584-702`；`ForumEngine/llm_host.py:27-262`；`utils/forum_reader.py:11-159`；`QueryEngine/nodes/summary_node.py:27-30, 81-105, 134, 249-266, 302`；`app.py:36-37, 85-118, 268-341, 432-496, 563-706, 1152-1316`；`ReportEngine/agent.py:47-172, 344-382, 405-776, 1432-1531`；`ReportEngine/flask_interface.py:27-47, 274-405, 604-703, 750-868`；`ReportEngine/ir/schema.py`；`MindSpider/main.py:269-394, 481-503`；`MindSpider/BroadTopicExtraction/get_today_news.py:27-43, 74-140`；`utils/retry_helper.py:148-166`；`LICENSE`、`MindSpider/LICENSE`。
 4. **命令/测试证据**：GitHub API（repo / commits 全量 / branches / releases / contributors / compare / pulls/720）；codeload tarball @ `b67928f`；`pytest tests/test_monitor.py tests/test_retry_helper.py` → 45 passed；`/tmp/forum_sim.py` 实测（5 发言 → 1 次 HOST）；grep（IM、调度、graphrag）；三引擎文件 md5 比对。
@@ -327,7 +327,7 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
 
 ## 6. 缺口与补齐方案
 
-| 缺口（相对 AideanFleet） | 补齐方式 | 来源 |
+| 缺口（相对 WorkFleet） | 补齐方式 | 来源 |
 |---|---|---|
 | 输入端：编码 CLI/ACP 接入 | 统一 InputAdapter（ACP 优先） | Orca `src/main/acp/*`（MIT，V0.0.1 R4）、acpx、ACP 官方 SDK |
 | 输出端：6 种 IM | ChannelAdapter | WechatClawbot、AstrBot、cc-connect、OpenClaw（V0.0.1 `20-同类开源/`） |
@@ -347,9 +347,9 @@ Agent 进程 loguru(stderr) ──管道──▶ app.py read_process_output ─
 
 ---
 
-## 7. 对 AideanFleet 的可复用清单（精确到模块；均为“模式借鉴/重写”，不拷贝）
+## 7. 对 WorkFleet 的可复用清单（精确到模块；均为“模式借鉴/重写”，不拷贝）
 
-| BettaFish 模块 | 可借鉴的具体设计 | AideanFleet 落点 | 不要照搬 |
+| BettaFish 模块 | 可借鉴的具体设计 | WorkFleet 落点 | 不要照搬 |
 |---|---|---|---|
 | `ForumEngine/llm_host.py:133-204` | 主持人职责六项 + 发言四段结构 + 字数上限 + 时间前缀 | 总控 `MeetingDigest` 提示模板（改写为开发场景：需求理解 / 方案对比与分歧 / 风险与依赖 / 待决问题与分工建议） | “已通过伦理性合规审查”前缀；中文硬编码 |
 | `ForumEngine/monitor.py:50, 524-559, 640-648` | 发言计数阈值触发、主持中互斥（`is_host_generating`）、处理后缓冲左移 | `HostPolicy.every_n_turns`（可选）、`asyncio.Lock` 防并发主持 | 同步阻塞、FIFO 不分来源、日志正则抓取 |

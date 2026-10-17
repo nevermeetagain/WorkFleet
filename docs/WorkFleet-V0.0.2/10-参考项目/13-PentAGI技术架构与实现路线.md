@@ -1,4 +1,4 @@
-# 13 · PentAGI 技术架构与实现路线（AideanFleet V0.0.2 · 研究方法第 8 步）
+# 13 · PentAGI 技术架构与实现路线（WorkFleet V0.0.2 · 研究方法第 8 步）
 
 > 分析对象：https://github.com/vxcontrol/pentagi
 > 分析版本：`main` @ `843dfeb4bfc809c09d1bc5022e567c602d8fc9dd`（2026-10-10 03:53:25 +0700 = 2026-10-10 04:53 +0800）
@@ -20,7 +20,7 @@
 | 总控相关价值 | ① Waiting/ask 屏障（上报等人）；② reflector/mentor/迭代上限三道护栏；③ Assistant 旁路对话 + `flow_manager` 五工具；④ 按角色配置模型 + 可编辑提示词模板 | 已确认（代码）/ 证据不足（效果） |
 | 并发 | **单 flow 串行**：`CLAUDE.md:218` “there is no queue”；flow/assistant 各自一个 goroutine | 已确认 |
 | 实现路线 | 2026-03-26 以单个 `repo final state`（936 文件 +414,095 行）落库 → v2.0.0(04-11) 前端/dashboard/运行时切换 provider → v2.1.0(05-29) assistant 工具、知识库、匿名化 → v2.2.0(10-04) 567 提交：多租户 schema、Graphiti、OpenCode/xAI/Bedrock/中国厂商 provider、routing doors、`6f3d29c` 大规模“port major fixes”（853 文件 ±16.8 万行） | 已确认 |
-| 对 AideanFleet | **借鉴设计范式，不复用代码**（领域强耦合 + 串行模型 + Docker 依赖） | 已确认 |
+| 对 WorkFleet | **借鉴设计范式，不复用代码**（领域强耦合 + 串行模型 + Docker 依赖） | 已确认 |
 | 许可 | `LICENSE` MIT（Copyright 2025 PentAGI Development Team）**并存** `EULA.md`：仅限“合法渗透测试用途”、禁止以其他形式再分发衍生品 | 已确认（文本）；对“仅借鉴设计/重写代码”的约束 → **证据不足，需法务** |
 
 ---
@@ -152,7 +152,7 @@ sequenceDiagram
 
 ### 3.3 调度
 
-**无调度器**（`grep -rln "cron\|robfig"` 仅命中测试文件；`backend/go.mod` 无 cron 依赖，`已确认`）。定时能力需外部（cron/外部编排器）调 REST `createFlow`。仓库内有一份 RFC 提案 `examples/proposals/flow_concurrency.md`（`295e7d3`，2026-05-07）讨论**持久化 flow 队列 + 完成 webhook**：明确要求队列必须持久化、可见、可管理、显式晋升、at-least-once webhook，并记录 PR #268 的“内存队列”方案**因隐藏生命周期状态被拒**——这段设计评审对 AideanFleet 的调度/队列设计极有参考价值（`已确认` 为提案，非实现）。
+**无调度器**（`grep -rln "cron\|robfig"` 仅命中测试文件；`backend/go.mod` 无 cron 依赖，`已确认`）。定时能力需外部（cron/外部编排器）调 REST `createFlow`。仓库内有一份 RFC 提案 `examples/proposals/flow_concurrency.md`（`295e7d3`，2026-05-07）讨论**持久化 flow 队列 + 完成 webhook**：明确要求队列必须持久化、可见、可管理、显式晋升、at-least-once webhook，并记录 PR #268 的“内存队列”方案**因隐藏生命周期状态被拒**——这段设计评审对 WorkFleet 的调度/队列设计极有参考价值（`已确认` 为提案，非实现）。
 
 ### 3.4 审批 / 上报（ask 屏障 + Assistant 旁路）
 
@@ -244,7 +244,7 @@ erDiagram
 
 【V0.0.2 复核·新增事实】
 - 多租户：`pkg/database/tenant.go`（`ca48268`，2026-07-30）——`TENANT_ID` 非空时把租户 search_path 追加进 DSN，并用 advisory lock 做 bootstrap；要求 `vector` 扩展装在所有租户共享的 schema（`tenant.go:16-28,54,78`）。
-- 会话注销：`users.session_generation`（迁移 `20260718_120000_user_session_generation.sql`）——cookie 携带签发时的 generation，中间件拒绝落后的 cookie，**无服务端会话表的注销方案**，对 AideanFleet 管理后台可借鉴。
+- 会话注销：`users.session_generation`（迁移 `20260718_120000_user_session_generation.sql`）——cookie 携带签发时的 generation，中间件拒绝落后的 cookie，**无服务端会话表的注销方案**，对 WorkFleet 管理后台可借鉴。
 - Provider 13 家（`pkg/providers/provider/provider.go:51-63`）：openai、anthropic、gemini、bedrock、ollama、custom、deepseek、glm、kimi、qwen、minimax、mistral、xai；枚举在 DB 中也是 enum（迁移 `20260227_120000_add_cn_providers.sql` 等逐个 ALTER TYPE）→ **新增 provider 要动迁移**，扩展成本高。
 
 ---
@@ -308,7 +308,7 @@ erDiagram
 **无插件系统**（`已确认`）。扩展靠“注册表 + 多点改动”：
 - 新 LLM provider：`CLAUDE.md` 明确列出 **9 处改动**（含 `pkg/providers/registry.go` 的 `registryEntry{Type,Name,Enabled,NewConfig,New,BuildConfig}`、DB enum 迁移、前端设置页）。当前 11 个 registry 条目 / 13 个 ProviderType。
 - 新搜索引擎：7 步（`CLAUDE.md`），迁移里能看到逐个加枚举（searxng、sploitus、firecrawl）。
-- 工具：`tools.Tool` 接口仅两方法 `Handle(ctx,name,args)` / `IsAvailable()`（`pkg/tools/tools.go:76-79`），注册在 `pkg/tools/registry.go`（工具名常量 L13-53）。**接口极简，可被 AideanFleet 直接采纳为“员工/能力”抽象**。
+- 工具：`tools.Tool` 接口仅两方法 `Handle(ctx,name,args)` / `IsAvailable()`（`pkg/tools/tools.go:76-79`），注册在 `pkg/tools/registry.go`（工具名常量 L13-53）。**接口极简，可被 WorkFleet 直接采纳为“员工/能力”抽象**。
 - MCP 客户端：**未实现**，仅有 RFC `examples/proposals/mcp_client_integration.md`（明确声明不改变运行时）。同目录另有 K8s 部署、Vertex AI、无头爬虫、证据链等 9 份提案 → **提案驱动的扩展治理方式**值得借鉴。
 
 ---
@@ -337,14 +337,14 @@ flowchart LR
 ```
 
 - 最小要求（README “System Requirements”）：**2 vCPU / 4 GB RAM / 20 GB 磁盘**（`已确认`，README:591-593）。可选栈会显著抬高资源需求（`证据不足`，未实测）。
-- 默认全部端口绑定 `127.0.0.1`，适合单机自托管；但必须挂载 `docker.sock` 且容器 `user: root`（`docker-compose.yml:230,235`）——**对 AideanFleet“设备端总控”是重安全负担**。
+- 默认全部端口绑定 `127.0.0.1`，适合单机自托管；但必须挂载 `docker.sock` 且容器 `user: root`（`docker-compose.yml:230,235`）——**对 WorkFleet“设备端总控”是重安全负担**。
 - 上传限制：单文件 300 MB、单请求 1000 文件 / 2 GB（README:1138）；删除 flow 不清理磁盘目录（README:1141，`存在缺陷`：运维需手工回收）。
 
 ---
 
 ## 10. 设计模式
 
-| 模式 | 位置 | 对 AideanFleet |
+| 模式 | 位置 | 对 WorkFleet |
 |---|---|---|
 | Actor（worker + input channel） | `flow.go:75,293,1288-1350` | 总控 ManagerWorker 模型 |
 | 屏障（ask → Waiting → 输入即回答） | `provider.go:892-905`、`flow.go:1354-1365` | “上报 → IM 回复 → 继续” |
@@ -392,9 +392,9 @@ tag：v0.1.0–v1.2.0 **全部指向同一个提交 `b90ea47`**（即首次落�
 
 ### 11.3 路线特征
 1. **先产品化后开源**：压扁的早期历史 + 一次性大提交，公开后才有细粒度演进（`已确认`）。
-2. **Provider 广度优先**：198 个提交命中 “provider”，覆盖 13 家（含 deepseek/glm/kimi/qwen/minimax 等中国厂商）——AideanFleet 若需多模型可直接抄这份“覆盖清单”。
+2. **Provider 广度优先**：198 个提交命中 “provider”，覆盖 13 家（含 deepseek/glm/kimi/qwen/minimax 等中国厂商）——WorkFleet 若需多模型可直接抄这份“覆盖清单”。
 3. **总控能力分三步长出来**：工具委派（初始）→ Assistant + flow_manager（2026-04）→ 护栏与路由门控（2026-09 `6f3d29c`）。
-4. **提案先行**：`examples/proposals/` 9 份 RFC 明确“本文不改运行时”，并记录被拒方案与理由——对 AideanFleet 的设计评审制度有直接借鉴价值。
+4. **提案先行**：`examples/proposals/` 9 份 RFC 明确“本文不改运行时”，并记录被拒方案与理由——对 WorkFleet 的设计评审制度有直接借鉴价值。
 5. **工程纪律严**：`CLAUDE.md` 用大篇幅规定注释密度（逻辑文件 0–2%）、测试纪律、密码策略双端一致。
 
 ---
@@ -423,11 +423,11 @@ tag：v0.1.0–v1.2.0 **全部指向同一个提交 `b90ea47`**（即首次落�
 
 ---
 
-## 13. 对 AideanFleet 的借鉴与迁移路线
+## 13. 对 WorkFleet 的借鉴与迁移路线
 
 ### 13.1 移植清单（**一律设计移植 / 重写，零代码拷贝**）
 
-| # | 借鉴项 | PentAGI 来源 | AideanFleet 落点 | 工作量（估算） | 备注 |
+| # | 借鉴项 | PentAGI 来源 | WorkFleet 落点 | 工作量（估算） | 备注 |
 |---|---|---|---|---|---|
 | 1 | Manager worker（input chan + 单 goroutine + Waiting 语义） | `flow.go:1288-1406` | 总控 `ManagerWorker`：有待答问题时新消息即回答 | 3 人日 | 需改为可并发多员工 |
 | 2 | Plan-Execute-Replan 循环 | `task.go:341-382`、`performers.go:96,189` | 需求澄清 → 派工 → 每步复盘 | 3 人日 | 子任务改为“向某 ACP 会话派发 prompt” |
@@ -436,7 +436,7 @@ tag：v0.1.0–v1.2.0 **全部指向同一个提交 `b90ea47`**（即首次落�
 | 5 | Assistant + flow_manager 五工具 | `assistant.go:421-431`；`tools/registry.go:49-53` | “与总控随时对话不打断任务”：status / send_input / patch_tasks / stop / wait | 3 人日 | 含状态守卫与输出截断 |
 | 6 | 按角色模型 + 可编辑模板 + 渲染校验 | `pconfig/config.go:144-162`；`pkg/templates` | 总控/会议主持/摘要/分类各自选模型；skill 可编辑 | 2 人日 | |
 | 7 | 工具接口 `Handle/IsAvailable` | `tools/tools.go:76-79` | 员工/能力统一抽象 | 0.5 人日 | |
-| 8 | 持久化队列 RFC 的四条原则 | `examples/proposals/flow_concurrency.md` | AideanFleet 任务队列设计准则（持久化/可见/可管理/显式晋升/at-least-once） | — | **直接写进设计文档** |
+| 8 | 持久化队列 RFC 的四条原则 | `examples/proposals/flow_concurrency.md` | WorkFleet 任务队列设计准则（持久化/可见/可管理/显式晋升/at-least-once） | — | **直接写进设计文档** |
 | 9 | 密钥脱敏 + 匿名化（外发前） | `config.go:491`；anonymizer | 出站 IM 消息脱敏 | 1 人日 | 合规刚需 |
 | 10 | 无状态注销 session_generation | 迁移 `20260718_120000` | 管理后台登出 | 0.5 人日 | |
 | 11 | 多租户 schema + advisory lock bootstrap | `database/tenant.go` | 多团队隔离（若需要） | 2 人日 | |
@@ -444,14 +444,14 @@ tag：v0.1.0–v1.2.0 **全部指向同一个提交 `b90ea47`**（即首次落�
 | 不复用 | Docker 沙箱、searchers、渗透测试模板、installer | — | — | — | 领域无关 |
 
 ### 13.2 必须规避
-1. **串行**：AideanFleet 总控需并发派工多个输入端（DAG/邮箱模型，参考 Orca，见基线 04 报告）。
+1. **串行**：WorkFleet 总控需并发派工多个输入端（DAG/邮箱模型，参考 Orca，见基线 04 报告）。
 2. **无并发上限**：按 RFC 的四原则实现持久化队列。
-3. **扩展要改 9 处 + DB enum**：AideanFleet 用注册表 + 配置表，避免枚举入库。
-4. **Docker socket + root**：AideanFleet 设备端总控不应要求特权。
+3. **扩展要改 9 处 + DB enum**：WorkFleet 用注册表 + 配置表，避免枚举入库。
+4. **Docker socket + root**：WorkFleet 设备端总控不应要求特权。
 
 ### 13.3 迁移路线
 - **P0**：法务结论——EULA 是否约束“仅借鉴设计、独立实现”。在此之前**零代码拷贝**（当前即按此执行）。
-- **P1**：把 §13.1 的 #1/#2/#4/#5 写入 AideanFleet《总控模式设计》，与 Orca 的 Run/Task/Dispatch/Mailbox 模型合并为统一状态机。
+- **P1**：把 §13.1 的 #1/#2/#4/#5 写入 WorkFleet《总控模式设计》，与 Orca 的 Run/Task/Dispatch/Mailbox 模型合并为统一状态机。
 - **P2**：最小闭环 PoC：单经理 + 串行派工 + ask 上报到微信，再扩到并发。
 
 ### 13.4 许可证
@@ -461,7 +461,7 @@ MIT + EULA 并存：EULA 第 15 行把使用限定为“合法渗透测试用途
 
 ## 14. 四轮方法收敛
 
-- **5W1H**：What——渗透测试自动化平台，具备完整“经理人+专家团队”引擎；Why——AideanFleet 总控的难点在状态机/护栏/旁路对话，PentAGI 恰覆盖这三点；Where/When——借鉴点在 `pkg/controller/*`、`pkg/providers/{performer,performers,assistant,helpers}`、`pkg/tools/{registry,flow_manager}`，应在总控模块设计期引入；Who——vxcontrol（Sergey Kozyrenko 主导）；How——设计移植 + 本语言重写；What if——若需并发多员工则串行模型不适用；若只用便宜模型，reflector/mentor 会放大成本（已有开关）；若 Docker 不可用则整体不可运行。
+- **5W1H**：What——渗透测试自动化平台，具备完整“经理人+专家团队”引擎；Why——WorkFleet 总控的难点在状态机/护栏/旁路对话，PentAGI 恰覆盖这三点；Where/When——借鉴点在 `pkg/controller/*`、`pkg/providers/{performer,performers,assistant,helpers}`、`pkg/tools/{registry,flow_manager}`，应在总控模块设计期引入；Who——vxcontrol（Sergey Kozyrenko 主导）；How——设计移植 + 本语言重写；What if——若需并发多员工则串行模型不适用；若只用便宜模型，reflector/mentor 会放大成本（已有开关）；若 Docker 不可用则整体不可运行。
 - **苏格拉底追问**：“上游无新提交”凭什么？——`git ls-remote` 与 GitHub API `pushed_at`（2026-10-10）双证据；“最大重构是 `6f3d29c`”凭什么？——按 `--stat` 行数排序确认 853 文件 ±16.8 万行，且 `routing*.go`、`window_compaction.go` 的首次出现提交即是它。反证：压扁的早期历史使 2026-03 之前的演进不可见 → 路线分析**限定于公开历史**。
 - **双向钢人**：支持 fork 作总控底座——状态机/护栏/旁路/provider/记忆全现成、工程质量高；反对——EULA、员工是内部 LLM 而非外部 ACP 会话（替换需重写 performer/handlers/tools 三层）、串行、Docker 重、模板全为渗透域。裁决：**反对意见成立，fork 不可行；设计借鉴成立**（`已确认`）。
-- **最终判断**：允许作为设计参考进入 AideanFleet 总控架构设计；不允许作为代码依赖进入实现，直至法务确认。局限：未部署、未验证护栏效果与并发竞态、资源未实测。
+- **最终判断**：允许作为设计参考进入 WorkFleet 总控架构设计；不允许作为代码依赖进入实现，直至法务确认。局限：未部署、未验证护栏效果与并发竞态、资源未实测。

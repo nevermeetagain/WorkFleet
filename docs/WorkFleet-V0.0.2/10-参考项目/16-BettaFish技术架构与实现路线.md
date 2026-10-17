@@ -1,4 +1,4 @@
-# 16 · BettaFish（微舆）技术架构与实现路线（AideanFleet V0.0.2 · 研究方法第 8 步）
+# 16 · BettaFish（微舆）技术架构与实现路线（WorkFleet V0.0.2 · 研究方法第 8 步）
 
 > 分析对象：https://github.com/666ghj/BettaFish（**GPL-2.0**；`MindSpider/` 另含 MediaCrawler **非商业学习许可 1.1**）
 > 版本：`main` @ `b67928ff1ce515dd7672408221fb1e9500d0972d`（2026-10-02 02:18 +08:00，star-history 机器人提交）；最近人工代码提交 `e5a15651`（2026-08-25）。
@@ -15,7 +15,7 @@
 2. **ForumEngine = 文件黑板 + 计数触发的主持人**：`LogMonitor` 线程每秒尾随三份日志，抽取 SummaryNode 的 JSON 输出写入 `forum.log`，每满 5 条调用一次主持 LLM 写 `[HOST]`；Agent 在总结节点读取最新 `[HOST]` 注入提示词。`已确认`（实测）
 3. **ReportEngine 是全仓工程化程度最高的部分**：门控 → 后台任务 → SSE（含 `Last-Event-ID` 补发）→ 模板选择/版式/篇幅/逐章 JSON → IR 装订与校验 → HTML/PDF/MD 多渲染 → 跨引擎救援 LLM。`已确认`
 4. **演进路线**：2024-07 课程式 Flask 舆情系统（原名 `Weibo_PublicOpinion_AnalysisSystem`）→ 2025-08 推倒重来为多 Agent（两周内完成 引擎→论坛→报告→爬虫）→ 2025-10 LLM 接入统一与 Docker → 2025-11/12 ReportEngine IR 化重写（v2/v3）→ GraphRAG 合入后于 2026-02/03 撤销 → 2026 年低频维护。`已确认`（提交标题）
-5. **对 AideanFleet**：架构**不可整体迁移**（单任务全局单例、文件耦合、GPL）；可迁移的是 **四个模式**：①主持人归纳与纪要注入；②多阶段 IR 汇报生成；③任务事件流 + SSE 补发；④每日“采集→提炼→入库→成稿”内容流水线（§10）。
+5. **对 WorkFleet**：架构**不可整体迁移**（单任务全局单例、文件耦合、GPL）；可迁移的是 **四个模式**：①主持人归纳与纪要注入；②多阶段 IR 汇报生成；③任务事件流 + SSE 补发；④每日“采集→提炼→入库→成稿”内容流水线（§10）。
 
 ---
 
@@ -266,7 +266,7 @@ flowchart LR
 | PostgreSQL 15 | 容器 5432 → 主机 `${POSTGRES_PORT:-5444}` | docker compose | `docker-compose.yml` |
 | MindSpider / report_engine_only | 无端口（CLI） | 用户 / 外部 cron | `MindSpider/main.py`、`report_engine_only.py` |
 
-与 Aidean（3000）、AideanBot（3333）、AideanFleet 段（3100–3200）**无端口冲突**（`已确认`：配置文件）。
+与 Aidean（3000）、AideanBot（3333）、WorkFleet 段（3100–3200）**无端口冲突**（`已确认`：配置文件）。
 
 ### 6.2 部署拓扑
 
@@ -338,12 +338,12 @@ flowchart TB
                                     2026-08 ▋ 7  · 2026-09 ▍ 4 · 2026-10 ▏ 2
 ```
 
-### 7.3 演进规律（对 AideanFleet 的启示）
+### 7.3 演进规律（对 WorkFleet 的启示）
 
-1. **先跑通“多 Agent 各干各的 + 汇总”，再加“讨论”**：论坛是在引擎完成后第 2 天加入的（08-24），且以“旁听日志”零侵入方式加入 → 低成本但留下长期脆弱性（P6 多次修补）。AideanFleet 应在会议协议**第一版就用结构化事件**。
-2. **主持人从异步改同步**（09-16）：说明异步主持带来的并发/一致性问题比延迟更难受；AideanFleet 用“轮次完成触发 + 单写者”可同时拿到一致性与可控延迟。
-3. **报告链路的工程化（IR + 校验 + 修复 + 救援）占后期一半以上提交**：LLM 生成结构化长文的主要成本在“修 JSON/修图表/修排版”，AideanFleet 的统一汇报应**先定小而稳的 IR 子集**。
-4. **知识库试验被撤**：功能边界膨胀后回撤，提醒 AideanFleet 知识库走外部组件（Hindsight）而非内嵌。
+1. **先跑通“多 Agent 各干各的 + 汇总”，再加“讨论”**：论坛是在引擎完成后第 2 天加入的（08-24），且以“旁听日志”零侵入方式加入 → 低成本但留下长期脆弱性（P6 多次修补）。WorkFleet 应在会议协议**第一版就用结构化事件**。
+2. **主持人从异步改同步**（09-16）：说明异步主持带来的并发/一致性问题比延迟更难受；WorkFleet 用“轮次完成触发 + 单写者”可同时拿到一致性与可控延迟。
+3. **报告链路的工程化（IR + 校验 + 修复 + 救援）占后期一半以上提交**：LLM 生成结构化长文的主要成本在“修 JSON/修图表/修排版”，WorkFleet 的统一汇报应**先定小而稳的 IR 子集**。
+4. **知识库试验被撤**：功能边界膨胀后回撤，提醒 WorkFleet 知识库走外部组件（Hindsight）而非内嵌。
 
 ---
 
@@ -380,13 +380,13 @@ flowchart TB
 
 ---
 
-## 10. 迁移到 AideanFleet 的实现路线
+## 10. 迁移到 WorkFleet 的实现路线
 
-> 原则：**GPL-2.0 → clean-room**。以下给出的是**行为规格与接口设计**（AideanFleet 自有，Python 3.12 asyncio，与 V0.0.1 `04-自研架构设计.md §3-§4` 一致），不包含 BettaFish 代码或提示词原文。
+> 原则：**GPL-2.0 → clean-room**。以下给出的是**行为规格与接口设计**（WorkFleet 自有，Python 3.12 asyncio，与 V0.0.1 `04-自研架构设计.md §3-§4` 一致），不包含 BettaFish 代码或提示词原文。
 
 ### 10.1 映射总表
 
-| BettaFish 机制 | AideanFleet 对应物 | 关键改造 |
+| BettaFish 机制 | WorkFleet 对应物 | 关键改造 |
 |---|---|---|
 | 三个固定研究引擎 | 总控会议的**参与者 = 外部 ACP 会话**（Claude/Codex/Cursor…，V0.0.1 `05 §0 D1`） | 参与者数据驱动（会议参与者表），不再硬编码 |
 | SummaryNode 日志行 = 发言 | 员工对“议题包”的**结构化回复**（V0.0.1 `05 §3.2` 的 stance/proposal/risks… JSON），从 ACP `session/update` 收集 | 由网关主动发问、主动收齐；格式闸校验 |
@@ -401,7 +401,7 @@ flowchart TB
 | 救援 LLM 链 | 总控模型池 fallback（按角色配置顺序） | 与 V0.0.1 `05 §6.1` 合并 |
 | 分级重试 | 适配器/模型/IM 发送三类重试策略表；IM 交互类初始延迟 ≤2 s | 避免 60 s 起步的“假死” |
 | MindSpider 每日采集 | 场景 4 `ContentSource` 插件（RSS/官方博客/论文/GitHub Trending 等 AI 源）→ `content_items` → LLM 去重/打标/摘要 → `daily_digest` | 不用 MediaCrawler；源需逐个确认条款 |
-| （无调度器） | AideanFleet 调度器：`daily 09:00 Asia/Shanghai`，工作日/节假日规则（V0.0.1 `04 §4` holiday-cn） | 场景 4 主触发 |
+| （无调度器） | WorkFleet 调度器：`daily 09:00 Asia/Shanghai`，工作日/节假日规则（V0.0.1 `04 §4` holiday-cn） | 场景 4 主触发 |
 | （无推送） | 订阅表 + 广播队列 + 限速 + 回执（V0.0.1 `04 §8`） | 场景 4 分发 |
 
 ### 10.2 总控会议（借鉴 ForumEngine）时序（目标形态）
@@ -493,7 +493,7 @@ flowchart LR
 
 ## 11. 四轮方法收敛（摘要）
 
-- **5W1H**：What——单机多进程 + 文件总线 + 单例报告引擎（§0–§6）；Why——单用户研究工具定位，最小侵入地“旁听”Agent；Where/When——借鉴点集中在 `ForumEngine/`、`ReportEngine/`、`MindSpider/BroadTopicExtraction/`，在 AideanFleet 总控（S3）与场景 4（S4）设计期引入；Who——666ghj/MaYiding/DoiiarX；How——tarball@SHA + API 历史 + 单测 + 桩实测；What if——日志措辞变化即论坛断链、主持 Key 缺失静默降级、单任务锁阻塞并发（06 §5.1）。
+- **5W1H**：What——单机多进程 + 文件总线 + 单例报告引擎（§0–§6）；Why——单用户研究工具定位，最小侵入地“旁听”Agent；Where/When——借鉴点集中在 `ForumEngine/`、`ReportEngine/`、`MindSpider/BroadTopicExtraction/`，在 WorkFleet 总控（S3）与场景 4（S4）设计期引入；Who——666ghj/MaYiding/DoiiarX；How——tarball@SHA + API 历史 + 单测 + 桩实测；What if——日志措辞变化即论坛断链、主持 Key 缺失静默降级、单任务锁阻塞并发（06 §5.1）。
 - **苏格拉底追问**：“架构可迁移吗？”——进程/文件耦合与单例决定了**不可整体迁移**（§5 依赖表证据）；“演进路线可信吗？”——仅基于提交标题，个别标题与现状矛盾（08-22“放弃 Flask”）已标 `部分确认`。
 - **双向钢人**：支持“借模式”——模式在 42k★ 项目中被大量用户实际运行；反对——质量增益无量化证据、模式本身有 FIFO 失衡/同步阻塞等缺陷 → 已在 §10.1 改造项中逐一修正，质量问题交 PoC-8。
-- **最终判断**：架构层面 `部分确认` 可作参考；**允许**按 §10 路线进入 AideanFleet 总控会议（M1–M5）与场景 4（M6–M7）设计；M8 需法务确认后才可执行（`暂不执行`）。
+- **最终判断**：架构层面 `部分确认` 可作参考；**允许**按 §10 路线进入 WorkFleet 总控会议（M1–M5）与场景 4（M6–M7）设计；M8 需法务确认后才可执行（`暂不执行`）。

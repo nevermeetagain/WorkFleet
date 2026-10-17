@@ -1,4 +1,4 @@
-# 01 · WechatClawbot 深度分析（AideanFleet V0.0.2 修订版，基于 V0.0.1 基线）
+# 01 · WechatClawbot 深度分析（WorkFleet V0.0.2 修订版，基于 V0.0.1 基线）
 
 > 【V0.0.2更新】2026-10-17 复核：上游 `main` 仍为 `4ec3bbe8`（`git ls-remote` 确认），**代码零变更**，本报告全部代码结论维持。本次仅补充：完整 git 历史（`--unshallow` 得 10 个提交）、复跑测试结果、社区数据刷新。架构与实现路线详见 `11-WechatClawbot技术架构与实现路线.md`。
 
@@ -12,7 +12,7 @@
 
 ## 0. 一句话结论
 
-WechatClawbot 是一个 **“微信 iLink 协议接入层 + 单 LLM 问答 + 主动通知”** 的 Python 小型服务（源码约 2,680 行），**不是 ACP 网关**：它没有任何“编码智能体/CLI 输入端”适配，也没有多 IM 输出端。它对 AideanFleet 的真正价值在于 **微信 ClawBot（iLink）通道适配器的可复用实现**（扫码登录状态机、长轮询、context_token 回发、同用户重复扫码作废逻辑），以及一个**“iLink 同一微信用户只路由到最新授权 bot”** 的关键平台事实——这恰好是用户“反复扫码绑定/解绑”痛点的根因，也证明 AideanFleet 必须在 **一个 ClawBot 绑定上复用多个输入端**。
+WechatClawbot 是一个 **“微信 iLink 协议接入层 + 单 LLM 问答 + 主动通知”** 的 Python 小型服务（源码约 2,680 行），**不是 ACP 网关**：它没有任何“编码智能体/CLI 输入端”适配，也没有多 IM 输出端。它对 WorkFleet 的真正价值在于 **微信 ClawBot（iLink）通道适配器的可复用实现**（扫码登录状态机、长轮询、context_token 回发、同用户重复扫码作废逻辑），以及一个**“iLink 同一微信用户只路由到最新授权 bot”** 的关键平台事实——这恰好是用户“反复扫码绑定/解绑”痛点的根因，也证明 WorkFleet 必须在 **一个 ClawBot 绑定上复用多个输入端**。
 
 - 需求匹配度（加权估算）：**约 15%**（见 §2 打分表）
 - 复用结论：**协议层（wechat/）可直接借鉴或移植；会话/通知/调度层仅可参考思路；整体不宜作为底座。**
@@ -133,7 +133,7 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 ### 3.1 前端
 - 无独立前端工程。`api/routes.py:57-285` 用 Python f-string 内嵌一张 HTML（扫码、账号/用户列表、聊天历史、发送框），`loadAccounts()/loadUsers()` 原生 JS（L283-284）。
 - **安全问题**：`/` 在中间件白名单（`api/routes.py:331` `if path in ("/", "/health")`），页面把 `AUTH_TOKEN` 明文写入 HTML（L131 `<pre>{token}</pre>`、L135 `const AUTH_TOKEN = ...`）。仅当 `HOST=127.0.0.1`（默认）时可接受；若改为 `0.0.0.0`/Docker `EXPOSE 8088` 对外，**任何人打开首页即拿到管理令牌** → `存在缺陷`。
-- 复用价值：低；AideanFleet 需正式管理后台。
+- 复用价值：低；WorkFleet 需正式管理后台。
 
 ### 3.2 后端
 - 技术栈：FastAPI + uvicorn + httpx(async) + pydantic v2 + APScheduler + litellm（`pyproject.toml`）。
@@ -142,7 +142,7 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 - 入站消息链：`_poll_loop`（`app.py:199`）→ `WeChatClient.get_updates`（`wechat/client.py:36`，POST `ilink/bot/getupdates`，长轮询 35s，ReadTimeout 视为空）→ 持久化游标 `get_updates_buf`（`app.py:220-223`）→ `_dispatch`（L237）→ `WeChatMessage.model_validate` → `SessionRouter.handle`（`session/router.py:72`：过滤非 USER、`messages` 表去重、缓存 context_token、媒体分支、指令分支、`AIChat.chat`）→ `client.send_message(..., context_token)`（`app.py:260`）。
 - 出站主动链：`POST /notify` → `Notifier.notify`（`notify/notifier.py:34`）→ 写 `notifications` pending → 复用在线 client（`app.py:40 _provide_client`）→ 最多 3 次、`2^(n-1)` 秒退避 → 更新状态。
 - 错误处理：401/403 → 账号 `expired` 并停止循环（`app.py:207-211`）；网络错误 ≤5 次 2s、>5 次 30s 退避（L231-235）。
-- 同用户重复扫码：`_supersede_same_user_accounts`（`app.py:131-161`）把同 `ilink_user_id` 的旧账号置 `expired`。注释写明 iLink 语义：“每次扫码生成全新 bot 实例，用户消息只路由到最新授权的 bot”。→ **对 AideanFleet 是关键约束**（`部分确认`：来自作者注释与提交 `ed80fb53`，未用真机复现）。
+- 同用户重复扫码：`_supersede_same_user_accounts`（`app.py:131-161`）把同 `ilink_user_id` 的旧账号置 `expired`。注释写明 iLink 语义：“每次扫码生成全新 bot 实例，用户消息只路由到最新授权的 bot”。→ **对 WorkFleet 是关键约束**（`部分确认`：来自作者注释与提交 `ed80fb53`，未用真机复现）。
 
 ### 3.3 数据（SQLite，`db.py:37-87`）
 
@@ -186,7 +186,7 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 ### 3.8 性能
 - 每账号 1 个协程 + 1 个 httpx 客户端，账号数线性扩展，轻量（`已确认` 结构；未压测 → 吞吐 `证据不足`）。
 - 瓶颈：① 同步 sqlite3 在 async 中调用，每次新建连接；② 单账号消息**串行**处理，一条慢 LLM 调用（Coze 默认 60s 超时）会卡住该账号的所有后续消息；③ sessions 整行 JSON 重写。
-- 对 AideanFleet：编码智能体一次任务可能数分钟到数小时，**必须改为“入队 + 异步回发”**，不能沿用串行 await。
+- 对 WorkFleet：编码智能体一次任务可能数分钟到数小时，**必须改为“入队 + 异步回发”**，不能沿用串行 await。
 
 ### 3.9 配置
 - 全部来自 `.env`（`config.py`，pydantic-settings alias），`lru_cache` 单例，**无热更新、无 UI 编辑**。
@@ -230,19 +230,19 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 ## 4. 5W1H 拆解（第一轮）
 
 - **What**：一个把微信 ClawBot（iLink）接到单个 LLM 的多账号服务；已实现扫码、长轮询、问答、通知、cron、MCP。缺：编码智能体输入、多 IM、路由模式、总控、知识库。已被证明：28 个单测通过；媒体消息分支崩溃。未证明：真机收发、主动消息频控。
-- **Why**：作者目标是“游戏业务系统（奖励一颗麻籽）向用户发微信通知 + AI 问答”（README“与根项目的关系”），因此只做了 `POST /notify`，与 AideanFleet 的“开发者多工具统一入口”目标不同 → 匹配度低是**定位差异**而非实现差。
-- **Where/When**：价值集中在 `src/wechat_clawbot/wechat/*` 与 `app.py` 轮询/作废逻辑；应在 AideanFleet“输出端适配器”阶段（通道层）引用，早于路由/总控开发。
-- **Who**：作者 CodingHeader（个人）；协议提供方腾讯 iLink；AideanFleet 的“微信通道适配器”负责人应负责移植与真机验收。
-- **How**：将 iLink 客户端抽象为 AideanFleet `ChannelAdapter` 接口（`connect/login`、`poll|webhook`、`send(text|card|file)`、`typing`、`capabilities`），把串行 `_dispatch` 改为消息总线入队；`context_token` 持久化；token 加密。
+- **Why**：作者目标是“游戏业务系统（奖励一颗麻籽）向用户发微信通知 + AI 问答”（README“与根项目的关系”），因此只做了 `POST /notify`，与 WorkFleet 的“开发者多工具统一入口”目标不同 → 匹配度低是**定位差异**而非实现差。
+- **Where/When**：价值集中在 `src/wechat_clawbot/wechat/*` 与 `app.py` 轮询/作废逻辑；应在 WorkFleet“输出端适配器”阶段（通道层）引用，早于路由/总控开发。
+- **Who**：作者 CodingHeader（个人）；协议提供方腾讯 iLink；WorkFleet 的“微信通道适配器”负责人应负责移植与真机验收。
+- **How**：将 iLink 客户端抽象为 WorkFleet `ChannelAdapter` 接口（`connect/login`、`poll|webhook`、`send(text|card|file)`、`typing`、`capabilities`），把串行 `_dispatch` 改为消息总线入队；`context_token` 持久化；token 加密。
 - **What if**：
   - iLink 接口字段变化 → `WeChatMessage` 有 `extra=allow`（`models.py MediaItem/MessageItem`），解析不至于崩，但 `WeChatMessage` 本身未设 extra（会忽略多余字段，pydantic 默认 ignore），风险可控。
-  - iLink 关停或改为收费/白名单 → 微信通道整体不可用，AideanFleet 需有企业微信/公众号备选（`证据不足`）。
+  - iLink 关停或改为收费/白名单 → 微信通道整体不可用，WorkFleet 需有企业微信/公众号备选（`证据不足`）。
   - 端口：本项目默认 8088；用户约束 Aidean=3000、AideanBot=3333，若复用需改 `PORT`，否则端口冲突不会发生但不符合约束。
   - 配置缺失：`AUTH_TOKEN` 缺失直接拒绝启动（`__main__.py:22-26`）；AI_KEY 缺失 → 每条消息返回“AI 暂时不可用”。
 
 ## 5. 苏格拉底追问 + 双向钢人论证（第二、三轮）
 
-**结论 A：“WechatClawbot 不能作为 AideanFleet 底座。”**
+**结论 A：“WechatClawbot 不能作为 WorkFleet 底座。”**
 - 凭什么：输入端只有 LLM API（`ai/chat.py`），无 ACP/CLI 适配；输出只有微信；无路由层。证据来自当前最新提交代码。
 - 支持论证：全仓 grep 无 `acp`/`claude`/`codex`/`cursor` 进程调用（MCP 包是“被智能体调用”的方向，不是“调用智能体”）；`app.py` 将 router 写死为单个 `SessionRouter`。
 - 反对论证：可以把 Claude Code 等通过 MCP 接入，实现“工具→微信”推送，再把 `AIChat` 换成“ACP 客户端”就成了网关——改造量看似不大。
@@ -256,7 +256,7 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 **结论 C：“iLink 同一用户仅路由到最新 bot。”**
 - 证据：`app.py:131-139` 注释 + 提交 `ed80fb53 feat(core): auto-supersede old bot on same WeChat user re-scan`。
 - 反对：可能是作者对某次现象的误读；也可能多 bot 都能收到但顺序不同。
-- 裁决：`部分确认`，**需在 AideanFleet 立项早期用真机验证**；若成立，则“一个微信 = 一个 ClawBot 绑定 = 多输入端复用”是架构硬约束（用户的痛点正源于此）。
+- 裁决：`部分确认`，**需在 WorkFleet 立项早期用真机验证**；若成立，则“一个微信 = 一个 ClawBot 绑定 = 多输入端复用”是架构硬约束（用户的痛点正源于此）。
 
 ## 6. 缺陷清单
 
@@ -293,7 +293,7 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 
 ## 8. 最终判断（第四轮重构）
 
-1. **明确结论**：WechatClawbot **不适合作为 AideanFleet 底座**；其 **微信 iLink 通道实现**可作为 AideanFleet 微信输出端的首要参考。
+1. **明确结论**：WechatClawbot **不适合作为 WorkFleet 底座**；其 **微信 iLink 通道实现**可作为 WorkFleet 微信输出端的首要参考。
 2. **依据**：§2 映射表、§3.2 调用链、§6 缺陷。
 3. **代码证据**：`app.py:121-267`、`wechat/client.py`、`wechat/auth.py`、`session/router.py:12,91`、`api/routes.py:331`。
 4. **命令证据**：`pytest -q → 28 passed`；`/tmp/t_media.py → NameError`；GitHub API（stars 0、license null）。【V0.0.2更新】2026-10-17 三项均复跑一致；`git ls-remote` 确认无新提交。
@@ -301,7 +301,7 @@ ERR NameError name 'ChatRole' is not defined   ← 存在缺陷（见 §6.1）
 6. **局限**：未真机扫码；未验证 iLink 主动消息限制、频控、context_token 必要性；未评估 iLink 服务条款。
 7. **未验证**：§5 结论 C；Coze 会话行为。
 8. **风险**：无许可证；作者停更；iLink 协议/政策变化。
-9. **下一步**：① 向作者确认授权或决定重写；② 真机验证“同用户多 bot”与主动推送限制；③ 在 AideanFleet 架构里定义 ChannelAdapter 接口后移植 iLink 适配器。
+9. **下一步**：① 向作者确认授权或决定重写；② 真机验证“同用户多 bot”与主动推送限制；③ 在 WorkFleet 架构里定义 ChannelAdapter 接口后移植 iLink 适配器。
 10. **是否进入下一阶段**：**允许**以“微信通道参考实现”身份进入架构设计阶段；**不允许**作为整体底座进入开发。
 
 > 【V0.0.2更新】结论不变。新增依据与移植工作量估算见 `11-WechatClawbot技术架构与实现路线.md` §13。

@@ -1,4 +1,4 @@
-# 12 · Paperclip 技术架构与实现路线（AideanFleet V0.0.2 · 研究方法第 8 步）
+# 12 · Paperclip 技术架构与实现路线（WorkFleet V0.0.2 · 研究方法第 8 步）
 
 > 分析对象：https://github.com/paperclipai/paperclip
 > 分析版本：`master` @ `0528cc7ee0a00579cfa207d333085253accb6c4b`（2026-10-16 20:19:28 -0500 = 2026-10-17 09:19 +0800，“perf: overlap native GitHub and assigned-tool setup (#16620)”）
@@ -20,7 +20,7 @@
 | 并发模型 | Node 单线程事件循环 + `setInterval` 调度（默认 30s，`config.ts:413`）+ Postgres 持久化队列（`LISTEN/NOTIFY` 唤醒，行锁 + 幂等键）+ 子进程隔离 | 已确认（静态） |
 | 扩展机制 | 两类：**Platform Module**（进程内，适配器/存储/密钥）与 **Plugin**（进程外 worker，manifest + capability 门控）；外部适配器包可热加载 | 已确认 |
 | 实现路线 | 2026-02-16 一日内以 8 个“Add …”提交搭好 monorepo 骨架 → 3 月插件框架/routines → 4 月外部适配器/ACPX → 7 月 ACP 成为本地适配器默认引擎 → 8 月 Runner 协议 → 9 月聊天通道（opt-in）与模块化重构 → 10 月持久化投递队列、fast responses、primary agent、运行时同步钩子 | 已确认 |
-| 对 AideanFleet | **移植接口与模型设计，依赖相同 ACP 官方包**；不 fork；可选“Paperclip 作为上游输入端”桥接 | 已确认（设计）/ 证据不足（运行） |
+| 对 WorkFleet | **移植接口与模型设计，依赖相同 ACP 官方包**；不 fork；可选“Paperclip 作为上游输入端”桥接 | 已确认（设计）/ 证据不足（运行） |
 | 许可证 | MIT（`LICENSE`：Copyright (c) 2025 Paperclip AI） | 已确认 |
 
 ---
@@ -211,7 +211,7 @@ sequenceDiagram
 
 ---
 
-## 4. 数据模型 / ER 图（与 AideanFleet 相关子集）
+## 4. 数据模型 / ER 图（与 WorkFleet 相关子集）
 
 ```mermaid
 erDiagram
@@ -294,7 +294,7 @@ erDiagram
 
 ## 8. 插件 / 扩展机制
 
-| 扩展类 | 机制 | 证据 | 对 AideanFleet |
+| 扩展类 | 机制 | 证据 | 对 WorkFleet |
 |---|---|---|---|
 | **适配器（Platform Module）** | `ServerAdapterModule`（`execute/testEnvironment/sessionCodec/listModels/listSkills/syncSkills/getConfigSchema…`）注册到 `adapters/registry.ts`；外部包 `loadExternalAdapterPackage`/`reloadExternalAdapter` | `adapter-utils/src/types.ts:504`；`plugin-loader.ts:181,221`（2026-03-31 `14d59da31` 引入） | ★★★★★ 输入端抽象蓝本 |
 | **插件（out-of-process）** | manifest（capabilities、tools、jobs、webhooks、apiRoutes、managed agents/projects/routines/skills、UI slots）+ worker（`initialize/health/shutdown/onEvent/runJob/handleWebhook/getData/performAction/executeTool`） | `doc/plugins/PLUGIN_SPEC.md` §10-§13；`packages/plugins/sdk` | ★★★★ 能力门控、热插拔、at-least-once 事件 |
@@ -325,7 +325,7 @@ flowchart LR
 
 - 快速启动镜像：`docker/Dockerfile.onboard-smoke` 基于 `ubuntu:24.04`，`EXPOSE 3100`，`CMD npx paperclipai@… onboard --yes --bind lan`；`docker-compose.yml` 使用 `postgres:17-alpine`；另有 `quadlet`、`ecs-task-definition.json`。
 - 资源：README 未给出硬件下限（本次未检索到），实际内存/CPU `证据不足`（未运行）。
-- 端口：3100 / 54329 与 AideanFleet 约束 3000 / 3333 不冲突（`已确认` 默认值）。
+- 端口：3100 / 54329 与 WorkFleet 约束 3000 / 3333 不冲突（`已确认` 默认值）。
 
 ---
 
@@ -379,7 +379,7 @@ flowchart LR
 
 ### 11.3 V0.0.1 → V0.0.2 增量（27 提交，`78b833c..0528cc7`）
 
-| 类别 | 提交 | 要点 | 对 AideanFleet 影响 |
+| 类别 | 提交 | 要点 | 对 WorkFleet 影响 |
 |---|---|---|---|
 | 外部 Runner / Muse | `2cc79923`(#16444, 95 文件 +6,217)、`93ab7bad`(#16447, 37 文件 +6,825) | 共享外部 Runner 生命周期；Dot/Grok V6、home-mode V7、Muse V8 契约；Muse OAuth grant；新表 `muse_*` | 说明 Paperclip 正把执行面外移为独立 Runner 协议——印证“控制面/执行面分离”路线 |
 | 运行时同步钩子 | `9f4a956b`(#16499)、`5fbece9d`(#16501)、`5f5602bb`(#16603) | agent_runtime 资源流、技能与连接分配同步；迁移 0348、0354 | “配置变更 → 外部端点同步”的可靠事件模式 |
@@ -411,26 +411,26 @@ flowchart LR
 
 ---
 
-## 13. 对 AideanFleet 的借鉴与迁移路线
+## 13. 对 WorkFleet 的借鉴与迁移路线
 
 ### 13.1 移植清单
 
-| # | 借鉴项 | Paperclip 来源 | AideanFleet 落点 | 方式 | 工作量（估算） | 许可 |
+| # | 借鉴项 | Paperclip 来源 | WorkFleet 落点 | 方式 | 工作量（估算） | 许可 |
 |---|---|---|---|---|---|---|
 | 1 | 输入端接口形状 | `ServerAdapterModule`、`AdapterRuntime{sessionParams, sessionDisplayId, taskKey}`、`AdapterExecutionContext{signal, onLog/onEvent/onUsage}`（`types.ts:19-26,237,504`） | `InputAdapter` 接口 | 精简移植（去掉 workspace/sandbox/budget 耦合字段） | 2 人日 | MIT，保留版权声明 |
 | 2 | ACP 执行 | 直接依赖 `acpx@0.13.1`、`claude-agent-acp@0.73.0`、`codex-acp@1.6.2`；参考 `execute.ts` 的 resume→fresh 回退 | Claude Code / Codex 输入端 | **依赖官方包 + 自写薄封装**，不搬 5,680 行引擎 | 3–5 人日 | 各包自身许可（`证据不足`，需逐个核查）；锁版本并评估补丁 |
 | 3 | 会话模型 | `agent_task_sessions` + `heartbeat_runs.session_id_before/after` + `session_generation` | `sessions(input_id, native_session_id, display_id, generation)` + 按 resume ID 查询 API | 模型移植 | 1–2 人日 | MIT |
 | 4 | 通道能力矩阵 | `provider-catalog.ts:17-105` 字段集 | `ChannelAdapter.capabilities` | 字段沿用 + 增加 `requiresContextToken`、`supersedeOnRescan` 等中文 IM 特性 | 0.5 人日 | MIT |
 | 5 | 持久化投递队列 | `chat_deliveries`/`chat_publications` + NOTIFY 唤醒 | 入站/出站 outbox（SQLite 版可用轮询 + 内存信号） | 思路移植 | 3 人日 | MIT |
-| 6 | 调度 | `routines`（cron+timezone+concurrency_policy+catch_up_policy）、`scheduled-work` 截止时间唤醒 | AideanFleet 调度器（另加 once、工作日/休息日、法定节假日） | 模型移植 + 扩展 | 3 人日 | MIT |
+| 6 | 调度 | `routines`（cron+timezone+concurrency_policy+catch_up_policy）、`scheduled-work` 截止时间唤醒 | WorkFleet 调度器（另加 once、工作日/休息日、法定节假日） | 模型移植 + 扩展 | 3 人日 | MIT |
 | 7 | 审批 | `approvals` + approve 后唤醒请求方 | 总控模式“重大决策/资源申请”上报到 IM 卡片按钮 | 流程移植 | 2 人日 | MIT |
 | 8 | org chart 委派 | `reports_to` + 子 issue + skill 规则 | 总控“职业经理人 → 员工输入端”派工 | 设计借鉴 | — | MIT |
-| 9 | 插件机制 | PLUGIN_SPEC：out-of-process worker、capabilities、at-least-once 事件 | AideanFleet 通道/输入端插件化 | 设计借鉴（简化） | 5 人日+ | MIT |
+| 9 | 插件机制 | PLUGIN_SPEC：out-of-process worker、capabilities、at-least-once 事件 | WorkFleet 通道/输入端插件化 | 设计借鉴（简化） | 5 人日+ | MIT |
 | 10 | 随时对话不打断 | endpoint `concurrency_policy`、fast responses（3s 回执） | 总控对话通道独立于执行队列 | 设计借鉴 | 1 人日 | MIT |
 
 ### 13.2 迁移路线
 - **R1（主路线，推荐）**：自研轻量路由内核；按上表 #1–#7 选择性移植；依赖 ACP 官方包。
-- **R2（可选桥接）**：S3“主项目+子项目总控开发”场景下，把 Paperclip 作为上游输入端，AideanFleet 通过 REST/MCP 读写 issue/comment，负责中文 IM 投递。
+- **R2（可选桥接）**：S3“主项目+子项目总控开发”场景下，把 Paperclip 作为上游输入端，WorkFleet 通过 REST/MCP 读写 issue/comment，负责中文 IM 投递。
 - **R3（不推荐）**：fork 并改造 `CHAT_PROVIDERS`/DB CHECK——上游单日即 +21k 行，冲突成本不可控。
 
 ### 13.3 许可证
@@ -440,7 +440,7 @@ MIT：可复制/修改/商用，须保留 `Copyright (c) 2025 Paperclip AI` 与�
 
 ## 14. 四轮方法收敛
 
-- **5W1H**：What——智能体公司控制平面；Why——“If OpenClaw is an employee, Paperclip is the company”，IM 只是任务入口；Where/When——借鉴点集中在 adapter-utils、adapters、heartbeat、routines、chat 能力矩阵，应在 AideanFleet 输入端/会话/调度层设计期引用；Who——Paperclip AI 团队（Dotta 等）；How——接口移植 + 官方 ACP 包；What if——上游继续把执行面外移到 Runner（§11.3），AideanFleet 借鉴的“直接适配器”接口可能被弱化 → 应以 ACP 协议本身而非 Paperclip 内部接口为长期契约。
+- **5W1H**：What——智能体公司控制平面；Why——“If OpenClaw is an employee, Paperclip is the company”，IM 只是任务入口；Where/When——借鉴点集中在 adapter-utils、adapters、heartbeat、routines、chat 能力矩阵，应在 WorkFleet 输入端/会话/调度层设计期引用；Who——Paperclip AI 团队（Dotta 等）；How——接口移植 + 官方 ACP 包；What if——上游继续把执行面外移到 Runner（§11.3），WorkFleet 借鉴的“直接适配器”接口可能被弱化 → 应以 ACP 协议本身而非 Paperclip 内部接口为长期契约。
 - **苏格拉底追问**：“27 个新提交不改变结论”凭什么？——`git diff --name-only 78b833c HEAD` 对所有核心文件为空；新增表均为 Runner/Muse/资源日志；反证搜索：新增提交中无 `chat_providers`/`feishu`/`wechat` 改动 → 成立（`已确认`）。
 - **双向钢人**：支持 fork——输入侧与治理最强；反对——中文 IM 硬约束、日更、体量。裁决：维持“选择性移植 + 可选桥接”。
-- **最终判断**：允许以接口/模型借鉴进入 AideanFleet 架构设计；不允许 fork 作为既定方案。局限：未运行；补丁内容未审；资源未测。
+- **最终判断**：允许以接口/模型借鉴进入 WorkFleet 架构设计；不允许 fork 作为既定方案。局限：未运行；补丁内容未审；资源未测。

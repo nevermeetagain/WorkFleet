@@ -93,7 +93,7 @@
 **Q：WechatClawbot 0 star，凭什么值得分析？**
 价值不在社区背书，而在机制原创性：官方 iLink 通道的工程细节（扫码顶替、长轮询、CDN/媒体）与"AI 后端解耦 + MCP 反控"的组合，是中文微信生态里少见的完整公开实现。反方：无人验证 → 可能有未修 bug；已用 README + 提交记录交叉核对机制描述，未逐行读源码——标注【部分确认：机制存在，代码质量未审】。
 
-**Q：WeClaw 能否直接当 AideanFleet 的 Phase 1？**
+**Q：WeClaw 能否直接当 WorkFleet 的 Phase 1？**
 支持：Go 单二进制、ACP 三模、主动推送 API、多微信账号、活跃维护。反对：license 未在抓取内容中确认【待确认——落地前必查】；输出端单一且其微信实现与官方插件耦合；无多通道路由抽象，二次开发等于换心脏。裁决：作为 Phase 1 的**微信侧通道实现参考/直接部署对象**可行，作为长期核心需评估其许可与架构弹性。
 
 ## 6. 需要补充的功能点与参考方案
@@ -106,10 +106,10 @@
 | 知识库/记忆 | Hindsight | retain/recall/reflect 三操作接入 |
 | 身份 loop | Hindsight 知识页自动重写 + agenmod/immortal-skill | 报告 12 §6 |
 | Web 管理台 | Paperclip / Omnara dashboard | 报告 11 §7 |
-| 审批转发（ACP request_permission → IM） | 无现成中文实现（Omnara 有英文形态） | AideanFleet 原生实现 |
+| 审批转发（ACP request_permission → IM） | 无现成中文实现（Omnara 有英文形态） | WorkFleet 原生实现 |
 
 ## 7. 结论
 
 - WechatClawbot：**机制样本**（扫码持久化/顶替、滑窗摘要、cron 通知、MCP 反控、Coze 解耦），可直接借鉴设计与部分代码（注意其未声明 license，复用前确认【待确认】）。
-- WeClaw：**Phase 1 首选拼装件** + ACP 客户端参考实现；AideanFleet 的微信通道适配可直接对齐其 iLink 工程细节。
+- WeClaw：**Phase 1 首选拼装件** + ACP 客户端参考实现；WorkFleet 的微信通道适配可直接对齐其 iLink 工程细节。
 - 两者共同证明：**"微信官方 ClawBot 通道 + ACP 客户端多路复用"在 2026-10 已是可运行的成熟组合**，用户需求的技术地基存在。

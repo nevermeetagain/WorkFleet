@@ -1,6 +1,6 @@
 # 02 ACP 协议与生态研究报告
 
-> AideanFleet V0.0.2 ｜ 2026-10-17 ｜ 证据基线：agentclientprotocol.com 官方 v1 规范（实时抓取全文）+ GitHub 仓库 + zed.dev 文档
+> WorkFleet V0.0.2 ｜ 2026-10-17 ｜ 证据基线：agentclientprotocol.com 官方 v1 规范（实时抓取全文）+ GitHub 仓库 + zed.dev 文档
 
 ---
 
@@ -8,7 +8,7 @@
 
 **Agent Client Protocol（ACP）**是 Zed Industries 于 2025 年 8 月发起的开放协议，目标是把"代码编辑器（客户端）↔ AI coding agent（智能体）"之间的通讯标准化——业界普遍类比"AI 编程界的 LSP"【已确认】。
 
-对 AideanFleet 的战略意义：**ACP 把"接入 N 个输入端"从 N 个私有适配问题收敛为 1 个协议客户端问题**。AideanFleet 的本质将是一个"超级 ACP 客户端"（同时充当多 IM 通道的桥）。
+对 WorkFleet 的战略意义：**ACP 把"接入 N 个输入端"从 N 个私有适配问题收敛为 1 个协议客户端问题**。WorkFleet 的本质将是一个"超级 ACP 客户端"（同时充当多 IM 通道的桥）。
 
 - 仓库：`agentclientprotocol/agent-client-protocol`（含 Rust 数据模型：wire 消息、request/response/notification、JSON-RPC envelope）【已确认】
 - 官网/规范：agentclientprotocol.com（v1 Latest + v2 Draft 双轨）【已确认】
@@ -40,7 +40,7 @@
 
 ### 2.3 方法全景表
 
-| 方向 | 方法 | 类型 | 能力开关 | 对 AideanFleet 的用途 |
+| 方向 | 方法 | 类型 | 能力开关 | 对 WorkFleet 的用途 |
 |-----|------|-----|---------|----------------------|
 | C→A | `initialize` | 基线 | — | 探测 agent 名称/版本/能力（loadSession、promptCapabilities） |
 | C→A | `authenticate` | 基线 | Agent 要求时 | 订阅凭证注入点 |
@@ -62,14 +62,14 @@
 
 ### 2.5 扩展机制（高拓展性的协议级保证）
 1. `_meta` 字段携带自定义数据；
-2. `_` 前缀自定义方法（`_aideanfleet/xxx`）；
+> 〔此处原引用旧内部项目代码或其实测数据，已于 V0.0.3 按用户要求移除〕
 3. initialize 时能力广播。
-→ AideanFleet 的"总控模式"私有信令（如会议邀请、任务分配回执）可直接走 `_` 方法而不破坏兼容性【设计建议】。
+→ WorkFleet 的"总控模式"私有信令（如会议邀请、任务分配回执）可直接走 `_` 方法而不破坏兼容性【设计建议】。
 
 ### 2.6 v2 草案动向
 官网已挂 v2Draft 目录：Overview、Migrating from v1、Initialization、Authentication、Session Setup/Delete、**Prompt Lifecycle**、Content、Tool Calls、Elicitation、Cancellation、Agent Plan、Session Config Options、Slash Commands、Extensibility、Transports、Schema【已确认存在，内容未逐页抓取——标记部分确认】。
 - 影响：Prompt Lifecycle 与 Transports 是 v1→v2 最可能的变化点（Goose 仓库讨论 ACP-over-HTTP 的 RFD 印证传输层在演进）。
-- 对策：AideanFleet 的 ACP 层必须做**版本协商 + 传输抽象**（stdio now, HTTP later）。
+- 对策：WorkFleet 的 ACP 层必须做**版本协商 + 传输抽象**（stdio now, HTTP later）。
 
 ### 2.7 官方生态件
 - 官方库：**Kotlin、Java、Python、Rust、TypeScript** 五语言【已确认】→ 自研选型不受语言限制。
@@ -111,7 +111,7 @@
 | 解决 | 客户端 ↔ agent | agent ↔ 工具/上下文 | agent ↔ agent |
 | 类比 | LSP | USB / 工具总线 | 组织间协作 |
 | 传输 | stdio（v1），HTTP 草案中 | stdio / HTTP(SSE/Streamable) | HTTP + JSON-RPC / REST |
-| 对 AideanFleet | **主协议**（输入端接入 + 总控对输入端的驱动） | 总控的 skill/工具配置（E8） | 总控模式未来的输入端互通选项（非必需） |
+| 对 WorkFleet | **主协议**（输入端接入 + 总控对输入端的驱动） | 总控的 skill/工具配置（E8） | 总控模式未来的输入端互通选项（非必需） |
 | 成熟度 | v1 稳定 + v2 草案 | 广泛落地 | 早期，生态待验证 |
 
 **裁决**：不引入 A2A 依赖（避免早期锁定），总控→输入端仍用 ACP（总控即超级客户端），工具扩展用 MCP（复用现成 server 生态）。
@@ -126,9 +126,9 @@
 子进程模型天然本地（或同机容器）。若未来要"设备上的总控 + 云端 agent"，需等 ACP-over-HTTP（Goose RFD / v2 Transports）。当前设计：总控与输入端同机部署即可满足用户"运行在设备上"的表述【前提成立】。
 
 **Q：session/update 的通知粒度对 IM 是否过细？**
-过细——微信无法高频编辑消息。需要在 AideanFleet 中做**更新聚合器**（滑动窗口节流 + 终态合并），这是 WeClaw/WechatClawbot 都在做的工程决策【已确认同类项目均有此处理，如 markdown→纯文本、媒体上传合并】。
+过细——微信无法高频编辑消息。需要在 WorkFleet 中做**更新聚合器**（滑动窗口节流 + 终态合并），这是 WeClaw/WechatClawbot 都在做的工程决策【已确认同类项目均有此处理，如 markdown→纯文本、媒体上传合并】。
 
-## 7. 对 AideanFleet 的架构指令（结论）
+## 7. 对 WorkFleet 的架构指令（结论）
 
 1. 核心身份 = **ACP Client（多路）** + IM Bridge（多通道）。
 2. 输入端适配三模：ACP（首选，进程复用+会话保持）> CLI（`--resume` 降级）> HTTP（OpenAI 兼容 / Coze）——与 WeClaw 的实践完全一致【已确认可复用】。

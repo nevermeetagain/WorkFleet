@@ -8,7 +8,7 @@
 | Stars / 语言 / 许可证 | 3,352 / TypeScript（Node ≥ 22.13）/ MIT（`package.json:14`） |
 | 定位 | 无头 ACP 客户端（CLI + 库），pre-1.0，接口仍在演进（`README.md` 的 NOTE） |
 
-> 入围原因：需求写明"最好走 ACP"。acpx 是目前最完整的 **ACP 客户端运行时 + Agent 注册表**，可以作为 AideanFleet 输入层的"驱动"。它不是网关，加权分低是正常的。
+> 入围原因：需求写明"最好走 ACP"。acpx 是目前最完整的 **ACP 客户端运行时 + Agent 注册表**，可以作为 WorkFleet 输入层的"驱动"。它不是网关，加权分低是正常的。
 
 ---
 
@@ -19,7 +19,7 @@
 - **Where/When**：本机运行，会话状态位于 `~/.acpx/`（`README.md` 的 Sessions 一节）。
 - **Who**：注册表位于 `src/agent-registry.ts:53-131`，包括 pi、openclaw（`openclaw acp`）、codex（`@agentclientprotocol/codex-acp`）、claude（`@agentclientprotocol/claude-agent-acp`）、gemini（`gemini --acp`）、cursor（`cursor-agent acp`）、copilot、antigravity、devin、droid、iflow、junie、kilocode、kimi、kiro、opencode、qoder、qwen、trae、grok-build 等 30 多种。
 - **How**：spawn 子进程 → stdio NDJSON JSON-RPC（`src/acp/ndjson-stream.ts`、`jsonrpc.ts`）→ `client.ts`（`loadSession` 在 `:1230`，`resumeSession` 在 `:1275`）→ session 持久化、journal、event-log → 队列 owner 通过 IPC 串行处理同一会话的多个提交者（`src/session/queue/*`）。
-- **What if**：如果 AideanFleet 选 TS / Node 技术栈，可以直接 `import "acpx/runtime"`（`package.json:30-37` 的 exports 包含 `./runtime`、`./flows`、`./agent-registry`），省掉自写 ACP 客户端；如果选 Go，可改用 cc-connect 的 `agent/acp`。
+- **What if**：如果 WorkFleet 选 TS / Node 技术栈，可以直接 `import "acpx/runtime"`（`package.json:30-37` 的 exports 包含 `./runtime`、`./flows`、`./agent-registry`），省掉自写 ACP 客户端；如果选 Go，可改用 cc-connect 的 `agent/acp`。
 
 ## 2. 代码证据
 

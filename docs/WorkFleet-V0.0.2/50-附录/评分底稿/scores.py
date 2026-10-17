@@ -24,7 +24,7 @@ S["OCL"] = {
 "D21":(2,"E3","doctor、日志；指标/追踪证据不足"),
 "D22":(3,"E1","大量测试与 CI（提交标题含 test/ci）；未运行"),
 "D23":(3,"E3","npm/App 单机；Windows 一键与自启证据不足"),
-"D24":(2,"E0","TS + Agent 心智（所有消息先过其 Agent 运行时），与 AFX 任务内核概念差异大"),
+"D24":(2,"E0","TS + Agent 心智（所有消息先过其 Agent 运行时），与 旧内部项目 任务内核概念差异大"),
 "D25":(1,"E4","无订阅同意/退订设施"),
 "D26":(3,"E3","文档全（英文为主）；中文 IM 部分经腾讯插件"),
 }
@@ -51,7 +51,7 @@ S["CCC"] = {
 "D21":(2,"E4","Management API status；指标证据不足"),
 "D22":(3,"E4","单测+性能测试目录；CI 未核"),
 "D23":(3,"E4","单二进制本机常驻；run_as_user 仅 POSIX；自启/Windows 证据不足"),
-"D24":(2,"E0","Go 异构；project 中心模型 vs AFX goal/todo"),
+"D24":(2,"E0","Go 异构；project 中心模型 vs 旧内部项目 goal/todo"),
 "D25":(1,"E4","无订阅/退订"),
 "D26":(4,"E3","中文文档（docs/*.zh-CN.md）、原生国内 IM"),
 }
@@ -78,7 +78,7 @@ S["AION"] = {
 "D21":(2,"E0","证据不足"),
 "D22":(2,"E0","测试/CI 未核"),
 "D23":(3,"E3","桌面安装包（README）；G4 封顶 3"),
-"D24":(2,"E0","Rust/TS 异构；Lead/Mailbox/TaskBoard 可映射 AFX gate/todo"),
+"D24":(2,"E0","Rust/TS 异构；Lead/Mailbox/TaskBoard 可映射 旧内部项目 gate/todo"),
 "D25":(1,"E4","无订阅设施"),
 "D26":(4,"E3","中文架构文档与 PRD"),
 }
@@ -105,7 +105,7 @@ S["ASB"] = {
 "D21":(2,"E0","证据不足"),
 "D22":(3,"E4","tests/unit 多个（本轮 compare 可见）；CI 未核"),
 "D23":(3,"E4","Docker/desktop_runtime/k8s；单机可跑"),
-"D24":(3,"E4","同为 Python，但聊天管线概念与 AFX 任务内核不同"),
+"D24":(3,"E4","同为 Python，但聊天管线概念与 旧内部项目 任务内核不同"),
 "D25":(1,"E4","无订阅同意/退订"),
 "D26":(5,"E3","原生中文生态与文档"),
 }
@@ -186,7 +186,7 @@ S["ORC"] = {
 "D21":(2,"E4","bench 脚本、日志"),
 "D22":(3,"E4","vitest、严格 lint（AGENTS.md）；未运行"),
 "D23":(4,"E4","桌面三平台 + orcad 无头守护进程（orcad/main.ts:1）"),
-"D24":(3,"E4","TS 异构；Run/Task/Dispatch/Gate 与 AFX goal/todo/lease/gate 可映射"),
+"D24":(3,"E4","TS 异构；Run/Task/Dispatch/Gate 与 旧内部项目 goal/todo/lease/gate 可映射"),
 "D25":(1,"E4","无"),
 "D26":(2,"E4","英文；FTS5 unicode61 对中文按字切"),
 }
@@ -267,7 +267,7 @@ S["HDS"] = {
 "D21":(3,"E4","audit_log、llm_requests、monitoring/"),
 "D22":(3,"E4","测试与基准脚本；未运行"),
 "D23":(4,"E4","单容器/pip/pg0，三平台"),
-"D24":(3,"E4","Python，PG 存储与 AFX SQLite 不同"),
+"D24":(3,"E4","Python，PG 存储与 旧内部项目 SQLite 不同"),
 "D25":(3,"E4","Memory Defense REDACT、保留清理"),
 "D26":(2,"E4","默认英文嵌入 bge-small-en（config.py:1279）、英文 BM25"),
 }
@@ -298,7 +298,7 @@ S["BF"] = {
 "D25":(0,"E4","MediaCrawler 深度爬取（非商业许可、扫码登录）存在合规风险设计"),
 "D26":(4,"E4","中文原生文档与提示词"),
 }
-S["AFX"] = {
+S["OLD"] = {
 "D02":(3,"E4","Vue3 控制台 Approval/History/Notifications/Roles/Setup（dist 入库）；无 IM/绑定页"),
 "D03":(3,"E2","FastAPI + 单写者内核（docs/架构.md）；未运行 → G4 封顶 3"),
 "D04":(3,"E2","SQLite WAL goals/todos/attempts/events/quota（文档）"),
@@ -315,13 +315,13 @@ S["AFX"] = {
 "D15":(3,"E2","依赖仅 FastAPI/uvicorn；安装器内置私有 Python+Node；未实测 → 封顶 3"),
 "D16":(3,"E4","密钥只存环境变量名；test_no_secrets 守门"),
 "D17":(5,"E4","Proprietary，用户自有，无许可障碍"),
-"D18":(3,"E5","a9a24ed（2026-10-13），单维护者"),
-"D19":(0,"E4","无 ACP（claudecode.py:52 为 claude -p 一次性）、无 IM（fleet/notify 仅 SMTP）"),
+"D18":(3,"E5","〔已移除〕"),
+"D19":(0,"E4","〔已移除〕"),
 "D20":(2,"E2","events outbox（published 标志）"),
 "D21":(2,"E2","events/usage/budget"),
-"D22":(4,"E5","本轮实测（/tmp 副本，Python 3.12）：502 passed / 2 failed / 24 skipped（52.5s）；文档旧声明 344 passed；失败为 e2e 步行骨架 blocked=1 与 watchdog 拉起演练，原因未定位"),
+"D22":(4,"E5","〔内部实测数据已移除〕"),
 "D23":(3,"E2","Inno Setup 安装器、fleet service install（未实测→封顶 3）"),
-"D24":(5,"E4","即 AFX 本体"),
+"D24":(5,"E4","即 旧内部项目 本体"),
 "D25":(1,"E4","无"),
 "D26":(4,"E4","中文文档 docs/架构.md、进度与决策"),
 }

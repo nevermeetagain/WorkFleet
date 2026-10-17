@@ -1,4 +1,4 @@
-# 02 · Paperclip 深度分析（AideanFleet V0.0.2 修订版，基于 V0.0.1 基线）
+# 02 · Paperclip 深度分析（WorkFleet V0.0.2 修订版，基于 V0.0.1 基线）
 
 > 【V0.0.2更新】2026-10-17 复核：上游 `master` 由 `78b833c4` 前进到 `0528cc7ee0a00579cfa207d333085253accb6c4b`（2026-10-16 20:19 -0500），新增 **27 个提交**、`296 files changed, +21,284 / −2,509`。本报告引用的全部核心文件（chat-channels、chat_channels schema、provider-catalog、adapter-utils/types、adapters/registry、routines、index.ts、config.ts、session-preparation、runtime-execution、acpx-engine/execute、claude-local/acp、server/package.json、pnpm-workspace.yaml、constants.ts、telegram/commands.ts、routes/agents.ts）**均无改动**（`git diff --name-only 78b833c HEAD -- <files>` 为空），故原 `file:line` 证据仍有效、核心结论维持。增量集中在外部 Runner/Muse 契约、插件运行时同步钩子、Runner stdio MCP 与性能修复。架构与实现路线详见 `12-Paperclip技术架构与实现路线.md`。
 
@@ -14,15 +14,15 @@
 
 ## 0. 一句话结论
 
-Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScript 服务端 + React 19 UI + Postgres），以 **任务（issue）+ 组织架构（reportsTo）+ 心跳运行（heartbeat run）** 为核心。它 **已原生具备 AideanFleet 输入侧最难的部分**：Claude Code / Codex（含 ACP 引擎）、Cursor、Gemini、OpenCode、OpenClaw Gateway、Hermes 等 12 个智能体适配器、会话续接（sessionParams / sessionDisplayId）、cron 定时 routine、组织树委派（天然接近“总控/职业经理人”）、`/new` 新开会话、LLM Wiki 知识库插件。
+Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScript 服务端 + React 19 UI + Postgres），以 **任务（issue）+ 组织架构（reportsTo）+ 心跳运行（heartbeat run）** 为核心。它 **已原生具备 WorkFleet 输入侧最难的部分**：Claude Code / Codex（含 ACP 引擎）、Cursor、Gemini、OpenCode、OpenClaw Gateway、Hermes 等 12 个智能体适配器、会话续接（sessionParams / sessionDisplayId）、cron 定时 routine、组织树委派（天然接近“总控/职业经理人”）、`/new` 新开会话、LLM Wiki 知识库插件。
 
-但它与 AideanFleet 的定位存在**根本性差异**：
+但它与 WorkFleet 的定位存在**根本性差异**：
 1. **输出端（IM）只支持海外平台**：Slack / GitHub / Discord / Microsoft Teams / Telegram / Speko(语音) / AgentMail / iMessage-Photon；**无微信 ClawBot、飞书、QQ、钉钉**，且 provider 枚举被**写死在 TS 常量和 Postgres CHECK 约束**里，插件 SDK 不能扩展聊天通道。
 2. **以“任务”为中心而非“消息路由”为中心**：每条 IM 对话必须绑定一个 issue、一个 endpoint 只能分配一个 agent（`assigned_agent_id NOT NULL`），没有“输入→输出”的多对多路由表；主动私信（广播）能力大部分通道为 `false`。
 3. **体量与复杂度极高**：对“个人开发者统一收消息”场景偏重。
 
 - 需求匹配度（加权估算）：**约 50%**（输入侧强、输出侧与路由模式弱，见 §2.4）
-- 复用结论：**不建议整体 fork 作底座（中文 IM 缺失 + 模型不匹配 + 体量）；强烈建议复用/借鉴其“智能体适配器层（含 ACP 引擎）”、“会话续接模型”、“聊天通道能力矩阵 + 持久化投递队列”、“routine 调度”、“org-chart 委派”设计。** 另一可行路线：**Paperclip 作为 AideanFleet 的一个“上游输入端”**（AideanFleet 通过其 REST/MCP 读写 issue），由 AideanFleet 负责中文 IM。
+- 复用结论：**不建议整体 fork 作底座（中文 IM 缺失 + 模型不匹配 + 体量）；强烈建议复用/借鉴其“智能体适配器层（含 ACP 引擎）”、“会话续接模型”、“聊天通道能力矩阵 + 持久化投递队列”、“routine 调度”、“org-chart 委派”设计。** 另一可行路线：**Paperclip 作为 WorkFleet 的一个“上游输入端”**（WorkFleet 通过其 REST/MCP 读写 issue），由 WorkFleet 负责中文 IM。
 - 许可证：**MIT**（`LICENSE`：“Copyright (c) 2025 Paperclip AI”），商用与修改友好。
 
 ---
@@ -102,7 +102,7 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 
 | 场景 | 结论 | 说明 |
 |---|---|---|
-| S1 三项目、6 个开发工具 → 微信 ClawBot 统一接收 | **部分** | 6 个工具中 Claude Code / Codex / Cursor / OpenClaw 可直接作为 agent；三项目→`projects`；统一入口可用“经理 agent + endpoint”。**微信通道缺失**——必须自研 WeChat provider（需改 `CHAT_PROVIDERS`、DB CHECK、能力矩阵、runtime），或由 AideanFleet 外挂。 |
+| S1 三项目、6 个开发工具 → 微信 ClawBot 统一接收 | **部分** | 6 个工具中 Claude Code / Codex / Cursor / OpenClaw 可直接作为 agent；三项目→`projects`；统一入口可用“经理 agent + endpoint”。**微信通道缺失**——必须自研 WeChat provider（需改 `CHAT_PROVIDERS`、DB CHECK、能力矩阵、runtime），或由 WorkFleet 外挂。 |
 | S2 飞书数据管理：推广/运营/销售 3 个分析 agent → 数据部门 + 老板 | **部分** | 3 个 agent + routine 可做；“同一结果扇出给 2 个接收方”无原生模型（发布绑定单 conversation），且无飞书。 |
 | S3 主项目 + 子项目，一个管理入口，总控统一开发 | **支持度最高** | 这正是 Paperclip 的主场景：goal → project → issue 树、CEO/CTO/工程师 org chart、审批、预算、工作区（git worktree）。账号通用→多项目同公司。 |
 | S4 大量用户订阅，每日 9 点推送 AI 资讯 | **不支持** | routine 可每天 9 点让 agent 生成资讯；但**无订阅者模型、主动私信能力 false、无大规模扇出投递**。Paperclip 面向“公司内部成员”而非 C 端大量订阅用户。 |
@@ -131,7 +131,7 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 - React 19 + Vite 8 + Tailwind 4 + Radix/shadcn 风格组件（`ui/components.json`）+ TanStack Query；i18n 目录 `ui/src/i18n`（中文支持程度 `证据不足`）；Storybook；移动端预览脚本 `dev:mobile`（README 宣称“manage from your phone”）。
 - 页面：Agents/AgentDetail（含实时 run、历史、指令版本、工具）、AgentChat(s)、BoardChat、Routines/RoutineDetail、Approvals、Cases、CompanySkills、CompanyConnections、AdapterManager、Artifacts 等。
 - 适配器 UI 可插拔：每个适配器包有 `src/ui/`（如 `packages/adapters/claude-local/src/ui/build-config.ts`、`parse-stdout.ts`），声明式配置表单 `getConfigSchema`。
-- 对 AideanFleet：**“路由配置（输入×输出矩阵）”页面需自研**；Agent 管理、Run 转录、Routine 编辑器可大量参考。
+- 对 WorkFleet：**“路由配置（输入×输出矩阵）”页面需自研**；Agent 管理、Run 转录、Routine 编辑器可大量参考。
 
 ### 3.2 后端（核心调用链，已确认为静态追踪）
 
@@ -151,11 +151,11 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 - `AdapterRuntime`（L19-26）：`sessionId`(legacy)、`sessionParams`、`sessionDisplayId`、`taskKey`。
 - `AdapterExecutionContext`（L237-）：`runId`、`agent`、`runtime`、`config`、`context`、`signal`（取消）、`getFreshSessionHandoff`、`executionTarget`（本地/远程/沙箱）、`runtimeMcp/runtimeTools`、`onLog/onEvent/onUsage`。
 - 外部适配器：`plugin-loader.ts:181 loadExternalAdapterPackage`、`:221 reloadExternalAdapter`；`adapter-plugin.md` 记录 `registerServerAdapter/unregisterServerAdapter`。
-→ **这是 AideanFleet 输入端抽象最值得借鉴的接口**。
+→ **这是 WorkFleet 输入端抽象最值得借鉴的接口**。
 
-### 3.3 数据（Postgres / Drizzle，节选与 AideanFleet 相关的表）
+### 3.3 数据（Postgres / Drizzle，节选与 WorkFleet 相关的表）
 
-| 表 | 关键字段 | 对 AideanFleet 的意义 |
+| 表 | 关键字段 | 对 WorkFleet 的意义 |
 |---|---|---|
 | `agents` | company_id、name、role、title、**reports_to**、adapter_type、adapter_config、runtime_config、budget、status、lifecycle_* | “输入端实例”+ 组织树 |
 | `agent_task_sessions` | (company, agent, adapter_type, task_key) 唯一、session_params_json、**session_display_id**、last_run_id、goal_* | “resume ID” 持久化 |
@@ -191,7 +191,7 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 | 适配器接口 + 注册表 + 外部包加载 | `adapter-utils/src/types.ts`、`server/src/adapters/registry.ts`、`plugin-loader.ts` | ★★★★★ |
 | ACP 执行引擎 | `adapter-utils/src/acpx-engine/*`、`claude-local/src/server/acp.ts`、`codex-local/src/server/acp.ts` | ★★★★★（MIT，可直接依赖 `acpx` 与官方 ACP 包） |
 | 会话续接/交接 | `heartbeat/session-preparation.ts`、`adapter-utils/src/session-compaction.ts` | ★★★★ |
-| 通道能力矩阵 | `chat-channels/provider-catalog.ts` | ★★★★（AideanFleet 通道抽象直接沿用字段集） |
+| 通道能力矩阵 | `chat-channels/provider-catalog.ts` | ★★★★（WorkFleet 通道抽象直接沿用字段集） |
 | 持久化投递队列（Postgres NOTIFY 式） | `delivery-work-notifications.ts`、`chat-channels/publications/*`、`inbound/delivery-ledger.ts` | ★★★★（思路；实现与其 schema 深耦合） |
 | cron 解析 + 时区 + catch-up | `services/cron.ts`、`routines.ts:3199-` | ★★★★ |
 | org-chart 委派 + 审批 | `agents.reports_to`、`approvals`、`skills/paperclip` | ★★★★（总控模式蓝本） |
@@ -201,8 +201,8 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 
 ### 3.7 复用
 - **路线 1：整体 fork 并补中文 IM** — 需改：`CHAT_PROVIDERS` 常量、DB CHECK 约束 + 迁移、能力矩阵、`chat-sdk-runtime` 中按 provider 的分支（Telegram/Discord/Teams 均有大量专属文件：`chat-telegram-*.ts`、`chat-discord-*.ts` 数十个），并**持续跟随日更上游**。成本高、冲突多。不推荐。
-- **路线 2：Paperclip 作为 AideanFleet 的上游“输入端”** — AideanFleet 通过 Paperclip REST/MCP（`packages/mcp-server`、`routes/public-mcp.ts`）订阅 issue/run 事件并转发到微信/飞书/QQ/钉钉，反向把 IM 消息写成 issue comment。优点：零侵入、享受上游迭代。缺点：两套系统、两份身份。**推荐作为“总控/团队模式”的可选集成**。
-- **路线 3：选择性移植/依赖** — 直接依赖 `acpx`、`@agentclientprotocol/*` 包；按 MIT 移植适配器接口、cron、能力矩阵、会话模型设计到 AideanFleet 自研内核。**推荐作为 AideanFleet 主路线**。
+- **路线 2：Paperclip 作为 WorkFleet 的上游“输入端”** — WorkFleet 通过 Paperclip REST/MCP（`packages/mcp-server`、`routes/public-mcp.ts`）订阅 issue/run 事件并转发到微信/飞书/QQ/钉钉，反向把 IM 消息写成 issue comment。优点：零侵入、享受上游迭代。缺点：两套系统、两份身份。**推荐作为“总控/团队模式”的可选集成**。
+- **路线 3：选择性移植/依赖** — 直接依赖 `acpx`、`@agentclientprotocol/*` 包；按 MIT 移植适配器接口、cron、能力矩阵、会话模型设计到 WorkFleet 自研内核。**推荐作为 WorkFleet 主路线**。
 
 ### 3.8 性能
 - 设计面：Postgres 事务 + 行锁（`for("update")`）+ 幂等键 + 持久化队列，正确性优先；heartbeat 有 watchdog（`modules/active-run-watchdog`）、唤醒节流（`issue-rewake-throttle.ts`）、预算闸门。有 `perf:workspace-admission` 基准脚本、`IssueChatLongThreadPerf.tsx` 长线程性能实验页。
@@ -211,7 +211,7 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 ### 3.9 配置
 - `server/src/config.ts`（环境变量 + 配置文件 `config-file.ts`）：`PORT`（默认 3100）、`DATABASE_URL`（缺省用嵌入式 Postgres）、部署模式、密钥提供方（`secrets/`，支持 AWS 等，`doc/SECRETS-AWS-PROVIDER.md`）。
 - 运行时配置大多存 DB 并经 UI 编辑（agent adapter_config、endpoint 设置、routine）。
-- 约束提醒：AideanFleet 要求 Aidean=3000、AideanBot=3333；Paperclip 默认 3100 不冲突，若并存需显式配置 → 无冲突（已确认默认值）。
+- 约束提醒：WorkFleet 要求 Aidean=3000、AideanBot=3333；Paperclip 默认 3100 不冲突，若并存需显式配置 → 无冲突（已确认默认值）。
 
 ### 3.10 知识库
 - `plugin-llm-wiki`：本地文件夹（raw/、wiki/、AGENTS.md、IDEA.md、index.md、log.md）+ 插件 DB 命名空间（实例、源、页面、操作、查询会话），托管 Wiki Maintainer agent 与 routine；Paperclip 事件摄取默认关闭；附件仅元数据（安全闸门 Phase 5）。
@@ -228,7 +228,7 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 - 迁移 346 个、带迁移安全检查（`packages/db/src/check-migration-safety.ts`）。
 
 ### 3.13 资源
-- Node ≥24.11、pnpm、嵌入式 Postgres、可选 Rust runner；源码 160 MB（不含 node_modules）。个人单机可跑（README 有 quickstart/npx），但相对 AideanFleet“轻量网关”的预期偏重。实际内存/CPU → `证据不足`（未运行）。
+- Node ≥24.11、pnpm、嵌入式 Postgres、可选 Rust runner；源码 160 MB（不含 node_modules）。个人单机可跑（README 有 quickstart/npx），但相对 WorkFleet“轻量网关”的预期偏重。实际内存/CPU → `证据不足`（未运行）。
 
 ### 3.14 安全
 - 认证：better-auth（迁移文件名 `better-auth-account-issuer-migration.test.ts`）、board API key、agent API key / JWT（`agent-auth-jwt.ts`）、部署模式 `local_trusted` / `authenticated`（private/public）。
@@ -237,7 +237,7 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 - IM 外部人员：`allow_unlinked_people`、`external_execution_policy=restricted`、低信任预设、身份链接。
 - 沙箱：本地进程文件系统/网络范围（`local-process-sandbox`）、远程沙箱提供方。
 - 安全姿态徽章 Superagent（README），`SECURITY.md` 存在。
-- 结论：**安全设计远强于 AideanFleet 起步所需**，可作为合规参考。
+- 结论：**安全设计远强于 WorkFleet 起步所需**，可作为合规参考。
 
 ### 3.15 许可证
 - MIT（`LICENSE`）。可自由使用/修改/商用，保留版权声明即可。注意其依赖的打补丁第三方包（`patches/`）各自许可证 → `证据不足`（未逐个核查）。
@@ -250,26 +250,26 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 ## 4. 5W1H 拆解（第一轮）
 
 - **What**：一个面向“智能体公司”的编排平台；已实现多智能体适配（含 ACP）、任务树、组织架构、审批、预算、routine、海外 IM 通道、知识 wiki 插件。缺中文 IM、消息路由矩阵、订阅群发、会议式协作、强制总控把关。全部结论来自静态代码；无运行证据。
-- **Why**：其产品定义是“If OpenClaw is an employee, Paperclip is the company”（README），目标用户是管理“自治 AI 组织”，因此一切围绕 issue/goal，IM 只是“任务入口与回报通道”，不是“消息总线”。AideanFleet 的痛点是“一个微信收所有工具消息、不再反复扫码”，属于**通道复用/消息路由**问题——这是两者匹配度上限的根本原因。
-- **Where/When**：可借鉴代码集中在 `packages/adapter-utils`、`packages/adapters/*`、`server/src/adapters/`、`server/src/services/{cron,routines}.ts`、`chat-channels/provider-catalog.ts`、`packages/db/src/schema/{agents,agent_task_sessions,chat_channels,routines}.ts`。应在 AideanFleet“输入端适配器层”与“会话/调度层”设计阶段（先于编码）引用。
-- **Who**：Paperclip AI 团队与社区；AideanFleet 方需要：输入端负责人（参考适配器）、通道负责人（中文 IM 自研）、总控负责人（参考 org chart/委派）。
-- **How**：① 直接依赖 `acpx` + 官方 ACP 包实现 Claude Code / Codex 输入；② 移植 `ServerAdapterModule` 形状定义 AideanFleet `InputAdapter`；③ 沿用能力矩阵定义 `ChannelAdapter`；④ 自研 `Route` 表（mode: manage/notify/team/control）；⑤ 可选“Paperclip 桥接输入端”。
+- **Why**：其产品定义是“If OpenClaw is an employee, Paperclip is the company”（README），目标用户是管理“自治 AI 组织”，因此一切围绕 issue/goal，IM 只是“任务入口与回报通道”，不是“消息总线”。WorkFleet 的痛点是“一个微信收所有工具消息、不再反复扫码”，属于**通道复用/消息路由**问题——这是两者匹配度上限的根本原因。
+- **Where/When**：可借鉴代码集中在 `packages/adapter-utils`、`packages/adapters/*`、`server/src/adapters/`、`server/src/services/{cron,routines}.ts`、`chat-channels/provider-catalog.ts`、`packages/db/src/schema/{agents,agent_task_sessions,chat_channels,routines}.ts`。应在 WorkFleet“输入端适配器层”与“会话/调度层”设计阶段（先于编码）引用。
+- **Who**：Paperclip AI 团队与社区；WorkFleet 方需要：输入端负责人（参考适配器）、通道负责人（中文 IM 自研）、总控负责人（参考 org chart/委派）。
+- **How**：① 直接依赖 `acpx` + 官方 ACP 包实现 Claude Code / Codex 输入；② 移植 `ServerAdapterModule` 形状定义 WorkFleet `InputAdapter`；③ 沿用能力矩阵定义 `ChannelAdapter`；④ 自研 `Route` 表（mode: manage/notify/team/control）；⑤ 可选“Paperclip 桥接输入端”。
 - **What if**：
   - 上游日更：fork 路线会持续冲突 → 选“依赖包 + 设计借鉴”或“桥接”。
-  - ACP 包版本变化：Paperclip 自己对 `acpx@0.12/0.13`、`claude-agent-acp@0.73.0`、`codex-acp@1.6.2` 打了补丁（`pnpm-workspace.yaml patchedDependencies`）→ 说明官方包尚不稳定，AideanFleet 依赖时需锁版本并准备补丁（已确认存在补丁；补丁内容未审阅 → 证据不足）。
-  - 依赖服务不可用（Postgres）：Paperclip 有嵌入式 Postgres supervisor（`server/src/embedded-postgres-supervisor.ts`），AideanFleet 若采用 SQLite 则需另设计队列。
+  - ACP 包版本变化：Paperclip 自己对 `acpx@0.12/0.13`、`claude-agent-acp@0.73.0`、`codex-acp@1.6.2` 打了补丁（`pnpm-workspace.yaml patchedDependencies`）→ 说明官方包尚不稳定，WorkFleet 依赖时需锁版本并准备补丁（已确认存在补丁；补丁内容未审阅 → 证据不足）。
+  - 依赖服务不可用（Postgres）：Paperclip 有嵌入式 Postgres supervisor（`server/src/embedded-postgres-supervisor.ts`），WorkFleet 若采用 SQLite 则需另设计队列。
   - 端口：默认 3100，与 3000/3333 不冲突。
   - 若用户实际只需要 S1/S4（汇聚+群发），Paperclip 的价值显著下降；若主要做 S3（总控开发），Paperclip 可能“直接可用 + 外挂微信桥”。
 
 ## 5. 苏格拉底追问 + 双向钢人论证
 
-**结论 A：“Paperclip 不适合直接作为 AideanFleet 底座。”**
+**结论 A：“Paperclip 不适合直接作为 WorkFleet 底座。”**
 - 凭什么：中文 IM 0 个（`CHAT_PROVIDERS` + DB CHECK）；endpoint↔agent 1:1（`assigned_agent_id NOT NULL`）；conversation↔issue 必绑（`issue_id NOT NULL`）；主动私信能力几乎全为 false。
 - 支持论证：以上均为 schema 级硬约束，改动牵涉迁移与大量 provider 专属代码；S4 群发与其“公司成员”模型冲突。
 - 反对论证（最强）：Paperclip 已覆盖输入侧 90%、总控 55%，而这些恰是最难自研的部分；中文 IM 只是“再加几个 provider”；10 万 star 社区可能很快官方支持 Lark/Weixin（调研笔记 `2026-09-03-chat-adapters-research-notes.md:40` 已列入目录）；“管理模式=经理 agent 绑定一个微信 endpoint”在语义上可行。
-- 裁决：反对意见**部分成立**——对 S3 场景 Paperclip 几乎可直接用。但 AideanFleet 的首要痛点（S1：多工具→一个微信、免反复扫码）与 S4（群发）在 Paperclip 中需要**改核心模型**而非加插件（插件 SDK 无聊天 provider 扩展点：`packages/plugins/sdk/src` grep `chatProvider/registerChat` 无结果）。**结论 A 成立（部分确认，因未运行验证）**；同时保留“Paperclip 作为 S3 总控上游”的集成路线。
+- 裁决：反对意见**部分成立**——对 S3 场景 Paperclip 几乎可直接用。但 WorkFleet 的首要痛点（S1：多工具→一个微信、免反复扫码）与 S4（群发）在 Paperclip 中需要**改核心模型**而非加插件（插件 SDK 无聊天 provider 扩展点：`packages/plugins/sdk/src` grep `chatProvider/registerChat` 无结果）。**结论 A 成立（部分确认，因未运行验证）**；同时保留“Paperclip 作为 S3 总控上游”的集成路线。
 
-**结论 B：“Paperclip 的适配器层是 AideanFleet 输入端的最佳参考。”**
+**结论 B：“Paperclip 的适配器层是 WorkFleet 输入端的最佳参考。”**
 - 证据：12 个适配器、统一 `ServerAdapterModule`、ACP 引擎、会话 codec、模型发现、技能同步、外部包加载。
 - 反对：适配器与 Paperclip 运行时（heartbeat、workspace、sandbox、budget、runtime tools/MCP）耦合深（`AdapterExecutionContext` 字段大量 Paperclip 专属），直接复用代码困难；ACP 引擎 5,680 行复杂度高。
 - 裁决：**复用“接口形状 + 依赖相同的 ACP 官方包”，不复用实现代码**。结论 B 成立（已确认接口存在；可移植性 部分确认）。
@@ -282,9 +282,9 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 **结论 D：“/new 可满足 /clear 需求。”**
 - 证据：`telegram/commands.ts:36-38`、`session_generation`、`reset-session` 路由。
 - 反对：`/new` 新建 issue，等价于“新任务 + 新会话”，不完全等于“对 ClaudeCode 原生会话 /clear”（是否同时重置 agent_task_session 取决于 task_key 是否变化，推断 issue 变化即 task_key 变化 → `部分确认`）。
-- 裁决：语义基本满足，指令名可在 AideanFleet 中映射 `/clear → new session`。
+- 裁决：语义基本满足，指令名可在 WorkFleet 中映射 `/clear → new session`。
 
-## 6. 缺陷 / 风险清单（相对 AideanFleet 需求）
+## 6. 缺陷 / 风险清单（相对 WorkFleet 需求）
 
 | # | 问题 | 证据 | 标签 |
 |---|---|---|---|
@@ -319,15 +319,15 @@ Paperclip 是一个 **“AI 智能体公司操作系统”**（Node.js/TypeScrip
 
 ## 8. 最终判断（第四轮重构）
 
-1. **明确结论**：Paperclip 是本次两个参考项目中**与 AideanFleet 最接近、价值最高**的一个（匹配约 50%），尤其输入侧（多智能体 + ACP）与总控雏形；但 **不建议直接 fork 作为底座**，建议采用 **“自研轻量路由内核 + 依赖 ACP 官方包 + 移植 Paperclip 接口/模型设计”**，并把 **Paperclip 作为可选上游（S3 总控开发场景）** 进行桥接。
+1. **明确结论**：Paperclip 是本次两个参考项目中**与 WorkFleet 最接近、价值最高**的一个（匹配约 50%），尤其输入侧（多智能体 + ACP）与总控雏形；但 **不建议直接 fork 作为底座**，建议采用 **“自研轻量路由内核 + 依赖 ACP 官方包 + 移植 Paperclip 接口/模型设计”**，并把 **Paperclip 作为可选上游（S3 总控开发场景）** 进行桥接。
 2. **依据**：§2 映射、§3.2 调用链、§3.3 schema 硬约束、§5 论证。
 3. **代码证据**：`packages/shared/src/types/chat-channels.ts:9-18`；`packages/db/src/schema/chat_channels.ts:50,123,374,382,706`；`provider-catalog.ts:17-105`；`chat-channels.ts:1377,2098-2131`；`adapter-utils/src/types.ts:19-26,237,504`；`registry.ts:186-197,255,331,836`；`agents.ts:34`；`agent_task_sessions.ts:23-25`；`routines.ts(schema):118-119`；`services/routines.ts:3199`；`index.ts:1889`；`telegram/commands.ts:36-38`；`routes/agents.ts:4164,4180`；`config.ts:362`。
 4. **命令证据**：`git log -1`（SHA/日期）；GitHub API（stars/forks/license/pushed_at）；`git grep` 中文 IM 关键字仅命中调研笔记；目录/文件计数。
 5. **成立前提**：基于 `78b833c4`；上游未在近期加入中文 IM / 路由矩阵。【V0.0.2更新】已在 `0528cc7e` 复核：27 个新提交未触及 chat provider / 路由 / 中文 IM，前提仍成立。
 6. **局限**：未运行、未压测；仅定点精读与需求相关的约 30 个文件；UI 中文化、i18n 未核实。
 7. **未验证**：E3 按 resume ID 反查端点；E4 自动画像 loop；E8 并发对话语义；ACP 补丁内容；插件 SDK 能否间接扩展通道。
-8. **风险**：上游极速迭代导致借鉴的接口快速过时；ACP 包不稳定；若 AideanFleet 将来需要组织级治理，自研会重复造轮子。
-9. **下一步**：① 在本地以 Node 24 起一套 Paperclip，实测 Claude Code（engine=acp）+ Telegram endpoint 的端到端回路与资源占用；② 用 `@agentclientprotocol/claude-agent-acp`、`codex-acp`、`acpx` 做 AideanFleet 输入端 PoC；③ 与 WechatClawbot iLink 适配器拼接，验证 S1 最小闭环；④ 评估“Paperclip 桥接输入端”的 API 面（`packages/mcp-server`、`routes/public-mcp.ts`）。
-10. **是否进入下一阶段**：**允许**带着“借鉴清单 + 桥接备选”进入 AideanFleet 架构设计；**不允许**以“fork Paperclip”作为既定方案进入开发，除非 PoC 证明中文 IM 改造成本可控。
+8. **风险**：上游极速迭代导致借鉴的接口快速过时；ACP 包不稳定；若 WorkFleet 将来需要组织级治理，自研会重复造轮子。
+9. **下一步**：① 在本地以 Node 24 起一套 Paperclip，实测 Claude Code（engine=acp）+ Telegram endpoint 的端到端回路与资源占用；② 用 `@agentclientprotocol/claude-agent-acp`、`codex-acp`、`acpx` 做 WorkFleet 输入端 PoC；③ 与 WechatClawbot iLink 适配器拼接，验证 S1 最小闭环；④ 评估“Paperclip 桥接输入端”的 API 面（`packages/mcp-server`、`routes/public-mcp.ts`）。
+10. **是否进入下一阶段**：**允许**带着“借鉴清单 + 桥接备选”进入 WorkFleet 架构设计；**不允许**以“fork Paperclip”作为既定方案进入开发，除非 PoC 证明中文 IM 改造成本可控。
 
-> 【V0.0.2更新】结论不变。新增观察：上游正把执行面外移到独立 Runner 协议（PRP / Muse 契约，`2cc79923`、`93ab7bad`），AideanFleet 应以 **ACP 协议本身**而非 Paperclip 内部适配器接口作为长期契约。完整移植清单与工作量见 `12-Paperclip技术架构与实现路线.md` §13。
+> 【V0.0.2更新】结论不变。新增观察：上游正把执行面外移到独立 Runner 协议（PRP / Muse 契约，`2cc79923`、`93ab7bad`），WorkFleet 应以 **ACP 协议本身**而非 Paperclip 内部适配器接口作为长期契约。完整移植清单与工作量见 `12-Paperclip技术架构与实现路线.md` §13。
