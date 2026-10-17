@@ -24,7 +24,7 @@
    "D21": "doctor、日志；指标/追踪证据不足",
    "D22": "大量测试与 CI（提交标题含 test/ci）；未运行",
    "D23": "npm/App 单机；Windows 一键与自启证据不足",
-   "D24": "TS + Agent 心智（所有消息先过其 Agent 运行时），与 AFX 任务内核概念差异大",
+   "D24": "TS + Agent 心智（所有消息先过其 Agent 运行时），与 旧内部项目 任务内核概念差异大",
    "D25": "无订阅同意/退订设施",
    "D26": "文档全（英文为主）；中文 IM 部分经腾讯插件"
   },
@@ -82,7 +82,7 @@
    "D21": "Management API status；指标证据不足",
    "D22": "单测+性能测试目录；CI 未核",
    "D23": "单二进制本机常驻；run_as_user 仅 POSIX；自启/Windows 证据不足",
-   "D24": "Go 异构；project 中心模型 vs AFX goal/todo",
+   "D24": "Go 异构；project 中心模型 vs 旧内部项目 goal/todo",
    "D25": "无订阅/退订",
    "D26": "中文文档（docs/*.zh-CN.md）、原生国内 IM【G4 封顶 3】"
   },
@@ -140,7 +140,7 @@
    "D21": "证据不足",
    "D22": "测试/CI 未核",
    "D23": "桌面安装包（README）；G4 封顶 3",
-   "D24": "Rust/TS 异构；Lead/Mailbox/TaskBoard 可映射 AFX gate/todo",
+   "D24": "Rust/TS 异构；Lead/Mailbox/TaskBoard 可映射 旧内部项目 gate/todo",
    "D25": "无订阅设施",
    "D26": "中文架构文档与 PRD【G4 封顶 3】"
   },
@@ -198,7 +198,7 @@
    "D21": "证据不足",
    "D22": "tests/unit 多个（本轮 compare 可见）；CI 未核",
    "D23": "Docker/desktop_runtime/k8s；单机可跑",
-   "D24": "同为 Python，但聊天管线概念与 AFX 任务内核不同",
+   "D24": "同为 Python，但聊天管线概念与 旧内部项目 任务内核不同",
    "D25": "无订阅同意/退订",
    "D26": "原生中文生态与文档【G4 封顶 3】"
   },
@@ -372,7 +372,7 @@
    "D21": "bench 脚本、日志",
    "D22": "vitest、严格 lint（AGENTS.md）；未运行",
    "D23": "桌面三平台 + orcad 无头守护进程（orcad/main.ts:1）",
-   "D24": "TS 异构；Run/Task/Dispatch/Gate 与 AFX goal/todo/lease/gate 可映射",
+   "D24": "TS 异构；Run/Task/Dispatch/Gate 与 旧内部项目 goal/todo/lease/gate 可映射",
    "D25": "无",
    "D26": "英文；FTS5 unicode61 对中文按字切"
   },
@@ -546,7 +546,7 @@
    "D21": "audit_log、llm_requests、monitoring/",
    "D22": "测试与基准脚本；未运行",
    "D23": "单容器/pip/pg0，三平台",
-   "D24": "Python，PG 存储与 AFX SQLite 不同",
+   "D24": "Python，PG 存储与 旧内部项目 SQLite 不同",
    "D25": "Memory Defense REDACT、保留清理",
    "D26": "默认英文嵌入 bge-small-en（config.py:1279）、英文 BM25"
   },
@@ -637,7 +637,7 @@
    "D26": "E4"
   }
  },
- "AFX": {
+ "OLD": {
   "note": {
    "D01": "P0 21.1% / P1 20.6% / P0+P1 20.8%（53 项矩阵）",
    "D02": "Vue3 控制台 Approval/History/Notifications/Roles/Setup（dist 入库）；无 IM/绑定页",
@@ -656,13 +656,13 @@
    "D15": "依赖仅 FastAPI/uvicorn；安装器内置私有 Python+Node；未实测 → 封顶 3",
    "D16": "密钥只存环境变量名；test_no_secrets 守门",
    "D17": "Proprietary，用户自有，无许可障碍",
-   "D18": "a9a24ed（2026-10-13），单维护者",
-   "D19": "无 ACP（claudecode.py:52 为 claude -p 一次性）、无 IM（fleet/notify 仅 SMTP）",
+   "D18": "〔已移除〕",
+   "D19": "〔已移除〕",
    "D20": "events outbox（published 标志）",
    "D21": "events/usage/budget",
-   "D22": "本轮实测（/tmp 副本，Python 3.12）：502 passed / 2 failed / 24 skipped（52.5s）；文档旧声明 344 passed；失败为 e2e 步行骨架 blocked=1 与 watchdog 拉起演练，原因未定位",
+   "D22": "〔内部实测数据已移除〕",
    "D23": "Inno Setup 安装器、fleet service install（未实测→封顶 3）",
-   "D24": "即 AFX 本体",
+   "D24": "即 旧内部项目 本体",
    "D25": "无",
    "D26": "中文文档 docs/架构.md、进度与决策"
   },

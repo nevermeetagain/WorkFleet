@@ -1,7 +1,7 @@
 # 01 · ACP（Agent Client Protocol）协议深度分析
 
 > 版本：V0.0.1 研究稿 · 撰写日期：2026-10-16（Asia/Shanghai）
-> 范围：协议本体、会话语义、SDK、各 Agent 的 ACP 支持情况、与同名协议的区分、对 AideanFleet 的设计约束。
+> 范围：协议本体、会话语义、SDK、各 Agent 的 ACP 支持情况、与同名协议的区分、对 WorkFleet 的设计约束。
 > 标签约定：`已确认`（读到官方文档/源码原文）· `部分确认`（官方来源有但不完整/存在冲突，或仅社区实测）· `证据不足`（未找到权威来源，不得作为设计前提）
 
 ---
@@ -12,7 +12,7 @@
 |---|---|---|
 | C1 | 本产品语境下的 "ACP" = **Agent Client Protocol**（Zed 发起，现由 `agentclientprotocol` 组织维护），用于"客户端（编辑器/网关）↔ 编码 Agent"。**不是** IBM/BeeAI 的 Agent Communication Protocol（已于 2025-08 并入 A2A 并归档），也不是 A2A。 | 已确认 |
 | C2 | 传输：JSON-RPC 2.0，**stdio + 换行分隔 JSON（NDJSON）**，客户端拉起 Agent 子进程；Streamable HTTP/WebSocket 仍是 RFD 草案。 | 已确认 |
-| C3 | AideanFleet 在输入侧扮演 **ACP Client**：拉起 `claude-agent-acp` / `codex-acp` / `agent acp`（Cursor）/ `openclaw acp` / `gemini --acp` 等子进程，同一连接可承载多个 session。 | 已确认 |
+| C3 | WorkFleet 在输入侧扮演 **ACP Client**：拉起 `claude-agent-acp` / `codex-acp` / `agent acp`（Cursor）/ `openclaw acp` / `gemini --acp` 等子进程，同一连接可承载多个 session。 | 已确认 |
 | C4 | 会话恢复有两条路：`session/load`（**回放全部历史**，能力位 `loadSession`）与 `session/resume`（**不回放**，能力位 `sessionCapabilities.resume`）；另有 `session/list`、`session/close`、`session/delete`，`session/fork` 仍为 unstable。 | 已确认 |
 | C5 | ACP **没有** "/clear" 原语；"新开对话" 在协议层 = `session/new`（必要时 `session/close` 旧会话）。斜杠命令通过 `available_commands_update` 由 Agent 声明，是否含 `/clear` 取决于 Agent 实现。 | 已确认（协议层）/ 部分确认（各 Agent 斜杠命令清单） |
 | C6 | 权限审批是**客户端→用户**的往返：Agent 发 `session/request_permission`，客户端必须回复，否则工具调用阻塞——这正是"把审批推到微信/飞书"的协议锚点。 | 已确认 |
@@ -48,7 +48,7 @@
 
 证据：IBM 官方页面 "ACP is now part of A2A under the Linux Foundation"（https://research.ibm.com/projects/agent-communication-protocol）；Zed 讨论区明确两者不同（https://github.com/zed-industries/zed/discussions/37519）。`已确认`
 
-**设计含义**：文档、代码、配置中统一写 `ACP(Agent Client Protocol)`，模块命名 `acp-client`，避免与 A2A 混淆；总控模式若需要"Agent 互开会议"，**不靠 ACP 自身**（ACP 没有 Agent↔Agent 语义），而是由 AideanFleet 网关在多个 ACP 会话之间做编排。
+**设计含义**：文档、代码、配置中统一写 `ACP(Agent Client Protocol)`，模块命名 `acp-client`，避免与 A2A 混淆；总控模式若需要"Agent 互开会议"，**不靠 ACP 自身**（ACP 没有 Agent↔Agent 语义），而是由 WorkFleet 网关在多个 ACP 会话之间做编排。
 
 ---
 
@@ -60,7 +60,7 @@
 - **Streamable HTTP**：draft，RFD `docs/rfds/streamable-http-websocket-transport.mdx` 讨论中。
 - 允许自定义传输，但须保持 JSON-RPC 格式与生命周期。
 
-**对 AideanFleet 的硬约束**：
+**对 WorkFleet 的硬约束**：
 1. 每个输入端 Agent = 一个子进程，必须在设备上运行（Agent 要读写本机代码仓）。因此 "两端直连" 中的输入端连接器**必须是本机进程**，云端只能做中转（参见 04 文档的 Edge/Hub 划分）。
 2. stdout 纯净性：包装脚本（如 `npx`）的横幅输出会污染流，OpenClaw 文档专门给出 `OPENCLAW_HIDE_BANNER=1` 规避。实现时需对每个 Agent 做"首行非 JSON 即报错并隔离"的防护。
 3. 换行分帧 + 大消息：文件内容/diff 可能很大，读取端需要按行缓冲且设上限（建议 16–32 MiB/行，超限关闭会话并告警）。
@@ -102,7 +102,7 @@
 ## 5. 一次完整交互的生命周期（v1）
 
 ```
-Client(AideanFleet)                         Agent 子进程
+Client(WorkFleet)                         Agent 子进程
   | spawn + stdio pipes ------------------------> |
   | initialize{protocolVersion:1, clientCapabilities{fs,terminal}} -> |
   | <- {protocolVersion, agentCapabilities{loadSession, sessionCapabilities{list,resume,close,fork?}, promptCapabilities}, authMethods}
@@ -146,7 +146,7 @@ Client(AideanFleet)                         Agent 子进程
 - Cursor `agent acp`：文档写明 `session/new` 与 `session/load`。`已确认`
 
 **关键洞察（苏格拉底追问后保留）**：
-- `sessionId` 的**命名空间属于 Agent**。Claude 的 sessionId 与 `~/.claude/projects/<proj>/<id>.jsonl` 对应；Codex 的 thread id 与 `~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl` 对应（见 02 文档）。AideanFleet 必须自建 `fleet_session_id ↔ (agent_kind, agent_session_id, cwd, device_id)` 映射表，不能假设跨 Agent 唯一。
+- `sessionId` 的**命名空间属于 Agent**。Claude 的 sessionId 与 `~/.claude/projects/<proj>/<id>.jsonl` 对应；Codex 的 thread id 与 `~/.codex/sessions/YYYY/MM/DD/rollout-*-<id>.jsonl` 对应（见 02 文档）。WorkFleet 必须自建 `fleet_session_id ↔ (agent_kind, agent_session_id, cwd, device_id)` 映射表，不能假设跨 Agent 唯一。
 - "查看两端对话记录"不应依赖 `session/load` 回放（成本高、并非所有 Agent 支持、OpenClaw 有预算上限），**应由网关在流经时落库**（事件溯源），`session/load` 仅作冷启动补数。
 
 ---
@@ -155,7 +155,7 @@ Client(AideanFleet)                         Agent 子进程
 
 - v1 允许 Agent 请求客户端读写文件、开终端；但 Claude/Codex/Cursor 适配器都在本机自己执行工具，客户端不提供也能工作（Cursor 示例代码 `clientCapabilities: { fs: {readTextFile:false, writeTextFile:false}, terminal:false }`）。`已确认`
 - v2 直接删除这些方法。`已确认`
-- **决策**：AideanFleet V0.0.1 **不声明 fs/terminal 能力**（声明为 false），理由：①网关通常不在代码编辑器语境；②v2 将移除；③减少攻击面。代价：依赖客户端 fs 的少数 Agent 可能功能降级——需在接入测试中逐个验证（`证据不足`：哪些 Agent 强依赖客户端 fs，未逐一实测）。
+- **决策**：WorkFleet V0.0.1 **不声明 fs/terminal 能力**（声明为 false），理由：①网关通常不在代码编辑器语境；②v2 将移除；③减少攻击面。代价：依赖客户端 fs 的少数 Agent 可能功能降级——需在接入测试中逐个验证（`证据不足`：哪些 Agent 强依赖客户端 fs，未逐一实测）。
 
 ---
 
@@ -191,10 +191,10 @@ Client(AideanFleet)                         Agent 子进程
 
 ## 10. 5W1H 拆解
 
-**What**：ACP 是一份"客户端驱动、Agent 子进程、JSON-RPC/stdio"的协议，定义会话、流式更新、工具审批与会话持久化。AideanFleet 要做的是"多 Agent × 多 IM"的路由网关，ACP 只覆盖其中 **Agent 一侧**；IM 一侧完全没有标准，需要自定义 OutputAdapter。
+**What**：ACP 是一份"客户端驱动、Agent 子进程、JSON-RPC/stdio"的协议，定义会话、流式更新、工具审批与会话持久化。WorkFleet 要做的是"多 Agent × 多 IM"的路由网关，ACP 只覆盖其中 **Agent 一侧**；IM 一侧完全没有标准，需要自定义 OutputAdapter。
 **Why**：用户痛点是"一个微信要轮流绑定 5+ 工具"。根因不是协议缺失，而是**每个工具各自实现一个 IM 渠道**（例如 ZCode 自带飞书/微信 Bot、Claude Code 自带 Remote Control）且微信 ClawBot 每账号仅一个 Bot（见 03）。ACP 让网关可以**统一驱动**多个 Agent，从而只占用一个微信绑定——这才是方案成立的根本理由。
 **Where/When**：ACP 进程必须运行在拥有代码仓的设备上；`initialize` 必须先于一切；`session/load` 仅在 `loadSession` 为真时可用；v2 仅在双方协商为 2 时启用。
-**Who**：协议方 agentclientprotocol 组织；适配器维护方（Zed/JetBrains/Anthropic/OpenAI 联合署名，见 Registry `authors`）；AideanFleet 是 Client 实现者。
+**Who**：协议方 agentclientprotocol 组织；适配器维护方（Zed/JetBrains/Anthropic/OpenAI 联合署名，见 Registry `authors`）；WorkFleet 是 Client 实现者。
 **How**：`AcpInputAdapter` 统一封装 spawn→initialize→(authenticate)→new/load/resume→prompt→事件流→permission→cancel/close；能力位驱动功能开关。
 **What if**：
 - 若某 Agent 不支持 `loadSession`/`resume` → 只能新建会话，历史仅来自网关自存储；在 UI 标灰"恢复"。

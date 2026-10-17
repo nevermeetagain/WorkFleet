@@ -57,19 +57,19 @@ README"Server systems"章节自述的九大子系统【已确认】：
 | 存储 | 4.5 | DB 支撑队列、秘密库、工件 |
 | 资源 | 3 | 全功能部署重量级（Node 24 + 多服务） |
 
-## 4. 执行逻辑金矿（可直接移植到 AideanFleet 的四个机制）
+## 4. 执行逻辑金矿（可直接移植到 WorkFleet 的四个机制）
 
-1. **心跳执行 = 总控模式的调度内核**：DB 唤醒队列（合并风暴）、执行前五连检（预算→workspace→密钥→技能→适配器）、run 全程留痕、有界恢复。AideanFleet 的定时任务（E1）与总控分派（E6）可以完整照抄此模型，把"适配器调用"替换为"ACP session/prompt"。
+1. **心跳执行 = 总控模式的调度内核**：DB 唤醒队列（合并风暴）、执行前五连检（预算→workspace→密钥→技能→适配器）、run 全程留痕、有界恢复。WorkFleet 的定时任务（E1）与总控分派（E6）可以完整照抄此模型，把"适配器调用"替换为"ACP session/prompt"。
 2. **原子 checkout + 执行锁**：团队模式（M:N）下多个输入端并发领任务不冲突的成熟解。
 3. **Routines 统一建模**：定时任务不是独立子系统，而是"生成 issue → 唤醒 agent"的普通任务流——**追赶策略（catch-up）** 解决"停机错过 9 点推送怎么办"（用户场景 4 的健壮性需求）。
 4. **预算硬停 + Ask-first 工具网关**：总控模式防失控（无限会议循环）的现成答案；连接器 action 三态（Allowed/Ask/Off）映射到 IM 审批按钮。
 
 ## 5. 苏格拉底追问与钢人论证
 
-**Q：Paperclip 这么强，为什么不直接用它当 AideanFleet？**
+**Q：Paperclip 这么强，为什么不直接用它当 WorkFleet？**
 支持直接用：103k★、MIT、定时/治理/编排/多 agent 全都有。
 反对（未被排除）：① **通道错配**——其连接器是 Slack/Discord/Telegram/邮件，无微信 ClawBot/飞书/QQ/钉钉，中国输出端为零【已确认缺失】；② **模型错配**——它的核心抽象是"公司/issue/心跳"，用户的核心抽象是"IM 会话 ↔ agent 会话的路由"，前者改造成后者要在其 Identity/Task 系统上做侵入式二开；③ 部署重量（Node 24 全家桶）与"个人设备上跑"的轻量诉求有张力。
-裁决：**不作为底座，作为机制蓝本 + 可选的"总控执行后端"**（AideanFleet 的总控若需要重编排，可经其 API 驱动 Paperclip，而 IM 侧由 AideanFleet 自持）【设计建议】。
+裁决：**不作为底座，作为机制蓝本 + 可选的"总控执行后端"**（WorkFleet 的总控若需要重编排，可经其 API 驱动 Paperclip，而 IM 侧由 WorkFleet 自持）【设计建议】。
 
 **Q：103k★ 会不会是营销虚高、实际不可用？**
 反证：976 版本节奏、每日提交、Honeycomb/Sentry/OTel 全套工程化、贡献者众多——是真实活跃的超大型项目【已确认多信号】。但"everyone uses"是营销话术，实际采用率与话语术无关，不影响本报告结论。
@@ -79,7 +79,7 @@ README"Server systems"章节自述的九大子系统【已确认】：
 | 缺口 | 参考项目 | 补充方案 |
 |-----|---------|---------|
 | 中国 IM 输出端（微信/飞书/QQ/钉钉） | WeClaw / `@openclaw/feishu` / LangBot | 外挂 Channel Gateway，或用 Paperclip 插件体系自写连接器 |
-| IM 会话 ↔ 任务的双向映射 | WeClaw（chat 命令寻址） | AideanFleet 路由层（报告 11 §5） |
+| IM 会话 ↔ 任务的双向映射 | WeClaw（chat 命令寻址） | WorkFleet 路由层（报告 11 §5） |
 | 记忆/知识库 | Hindsight | per-repo bank + 知识页 |
 | ACP 原生接入 | WeClaw / acp-bridge | 适配器加 ACP 模式 |
 | 微信媒体管道 | WeClaw（CDN AES 上传） | 通道适配器内实现 |

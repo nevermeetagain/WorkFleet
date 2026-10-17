@@ -1,4 +1,4 @@
-# 04 · Orca 深度分析（AideanFleet V0.0.2 修订版；原 V0.0.1 参考项目）
+# 04 · Orca 深度分析（WorkFleet V0.0.2 修订版；原 V0.0.1 参考项目）
 
 > 分析对象：https://github.com/stablyai/orca
 > **【V0.0.2更新】修订版本**：`main` @ `fd1c6a592cc98f4ae6348f2bb101337a4b6f90a6`（2026-10-16 18:15 -0700 = 2026-10-17 09:15 +08:00，#29902），`package.json` 版本仍 `1.4.214`。基线 `a8e3734e` 为其祖先，相隔 330 个提交（+99,839/−26,971，2,342 文件）。本文件只修订最新代码中变化的内容，以【V0.0.2更新】标注；未标注段落为 V0.0.1 原文，已逐项核对其引用文件在 HEAD 仍存在。完整架构与演进见 `14-Orca技术架构与实现路线.md`。
@@ -100,7 +100,7 @@ electron 43.7.8、electron-vite 6、react 19.2、zustand 5、tailwindcss 4.3、@
 - ACP 启动规格“以数据描述”（`acp-launch-specs.ts` 头注释：“adding an agent is one more row (plus a dialect…)”），当前行：`grok`(:113)、`opencode`(:157)、`omp`(:189)；方言扩展在 `acp-dialects/{grok,opencode,omp}-dialect.ts`。【V0.0.2更新】HEAD 行号为 `grok`(:112)、`opencode`(:156)、`omp`(:188)、`ACP_LAUNCH_SPECS`(:216)；spec 新增/明确字段 `managedRuntime`（用户要求时才安装到数据目录，启动绝不安装，#28460/#29023）、`privateTempDirectory`（每进程私有 temp，#28462）；`fullAccess` 改为“chat 自己的 Full access 权限模式”而非全局设置（`acp-launch-specs.ts:68`，#29335）。另核实：`initialize` 声明 `clientCapabilities:{fs:{readTextFile:false,writeTextFile:false},terminal:false}`（`acp-session-runtime.ts:110`），协议版本固定 1（`generated/acp-protocol.generated.ts:200`）；ACP 层整体始于 2026-10-05（#24990）。
 - 模型发现两种方式：从 `initialize` 回包或执行列表命令（`acp-launch-specs.ts` `AcpModelDiscovery`），**绝不为此调用 authenticate/session/new**。
 - Claude 走 Agent SDK 进程（`src/main/claude/claude-agent-sdk-process-spawn.ts`），Codex 走 app-server（`src/main/codex/codex-app-server-capability-cache.ts`），其余 TUI agent 走 PTY + hooks。
-→ **AideanFleet 输入端适配器应采用同样的“三通路”分层：ACP（首选）/ 厂商 SDK 结构化流 / PTY 兜底**，并把“load vs resume”能力协商照搬（这是按 resume ID 续聊与查历史的前提）。
+→ **WorkFleet 输入端适配器应采用同样的“三通路”分层：ACP（首选）/ 厂商 SDK 结构化流 / PTY 兜底**，并把“load vs resume”能力协商照搬（这是按 resume ID 续聊与查历史的前提）。
 
 ### 3.2 编排：Coordinator tick 循环
 
@@ -135,7 +135,7 @@ CLI 动词全集（`src/cli/specs/orchestration*.ts`）：`run-create/run-use/ru
 
 【V0.0.2更新】编排 schema 版本 `SCHEMA_VERSION = 43`（`db/contract-constants.ts:23`），基线→HEAD 表结构未变。
 
-→ **这是 AideanFleet 总控持久层最直接可移植的 schema**：把 `to_handle` 扩展为“IM 通道地址”，即可让总控邮箱同时承载“员工↔总控”与“总控↔用户 IM”。
+→ **这是 WorkFleet 总控持久层最直接可移植的 schema**：把 `to_handle` 扩展为“IM 通道地址”，即可让总控邮箱同时承载“员工↔总控”与“总控↔用户 IM”。
 
 ### 3.4 自动化调度
 
@@ -154,11 +154,11 @@ ai-vault 扫描各 CLI 转录目录 → `session-search-indexer.ts`/`index-write
 
 ## 4. 全方位维度分析
 
-| 维度 | 现状（证据） | 对 AideanFleet 的意义 |
+| 维度 | 现状（证据） | 对 WorkFleet 的意义 |
 |---|---|---|
 | 前端 | React 19 + zustand + Tailwind 4 + shadcn，严格设计系统（`docs/STYLEGUIDE.md`，lint 强制）；自动化编辑器组件 `src/renderer/src/components/automations/*`（含 `AutomationCustomCronPanel.tsx`） | 定时任务编辑 UI、会话列表 UI 可直接参考交互 |
 | 后端 | Electron 主进程 + 可无头 `orca serve`；`@orca/process-host` 统一子进程；守护进程化终端（`src/main/daemon`） | 输入端运行时必须常驻、可在服务器无头跑——Orca 证明了这一形态 |
-| 数据 | 本地 SQLite（`node:sqlite`）；编排库、会话检索库、profile-state 库分离 | 单机零依赖；AideanFleet 设备端总控适合同构（SQLite + 可选 PG） |
+| 数据 | 本地 SQLite（`node:sqlite`）；编排库、会话检索库、profile-state 库分离 | 单机零依赖；WorkFleet 设备端总控适合同构（SQLite + 可选 PG） |
 | 交互 | 桌面 + 手机 App + CLI（agent 自身也用 CLI 交互） | “agent 通过 CLI 调用编排原语”是让任意 CLI 当员工/经理的关键技巧 |
 | 逻辑 | 监督式编排、FIFO 邮箱 + ack、熔断、gate、联邦派工、“absence ≠ death” 活性判定（`AGENTS.md` SSH Use Case） | 总控可靠性设计的金标准 |
 | 组件 | ACP json-rpc peer、session setup、launch spec 表驱动、cron 解析、FTS 索引器、通知去重 | 均可独立抽出（需剥离 Electron 依赖） |
@@ -182,14 +182,14 @@ ai-vault 扫描各 CLI 转录目录 → `session-search-indexer.ts`/`index-write
 ### 5.1 第一轮 5W1H
 
 - **What**：Orca 已实现多 CLI 并行运行与状态汇总、监督式编排协议、定时自动化、`/clear` 谱系、会话检索、手机远程操控。缺：IM 输出、多对多路由、通知群发、AI 自动分解/会议、重要度外发策略、知识库/画像。已证实：§3 全部 schema 与调用链；未证实：运行期行为与中文检索效果。
-- **Why**：用户痛点是“多工具 × 单微信反复扫码”。Orca 解决的是“多工具 × 单人桌面/手机”，**输入侧问题域一致、输出侧载体不同**。根因：Orca 把输出端做成自有 App（可控、可加密、可推送），而 AideanFleet 必须复用第三方 IM（受平台限制，如 iLink 同用户仅路由到最新 bot —— 见 01 报告）。
-- **Where/When**：可借鉴代码在 `src/main/acp`、`src/main/runtime/orchestration`、`src/main/automations`+`src/shared/automation-*`、`src/main/ai-vault-search`。应在 AideanFleet“输入端适配层”和“总控引擎”设计阶段最先引入。端口：Orca 本地 RPC 6768；与 AideanFleet 3000/3333 无冲突。
-- **Who**：Lovecast Inc./stablyai 维护；AideanFleet 侧输入端适配、总控、调度三个模块负责人分别消化。
+- **Why**：用户痛点是“多工具 × 单微信反复扫码”。Orca 解决的是“多工具 × 单人桌面/手机”，**输入侧问题域一致、输出侧载体不同**。根因：Orca 把输出端做成自有 App（可控、可加密、可推送），而 WorkFleet 必须复用第三方 IM（受平台限制，如 iLink 同用户仅路由到最新 bot —— 见 01 报告）。
+- **Where/When**：可借鉴代码在 `src/main/acp`、`src/main/runtime/orchestration`、`src/main/automations`+`src/shared/automation-*`、`src/main/ai-vault-search`。应在 WorkFleet“输入端适配层”和“总控引擎”设计阶段最先引入。端口：Orca 本地 RPC 6768；与 WorkFleet 3000/3333 无冲突。
+- **Who**：Lovecast Inc./stablyai 维护；WorkFleet 侧输入端适配、总控、调度三个模块负责人分别消化。
 - **How**：按模块“读契约→剥离 Electron/IPC→保留纯逻辑+schema→补测试”；优先移植 schema 与状态机，而非直接复制大文件。
 - **What if**：
-  - 若 Orca 未来自带 IM 通道 → 可考虑直接以 Orca 为输入端运行时、AideanFleet 只做 IM 网关（需持续关注，`证据不足`）。
+  - 若 Orca 未来自带 IM 通道 → 可考虑直接以 Orca 为输入端运行时、WorkFleet 只做 IM 网关（需持续关注，`证据不足`）。
   - 若 ACP 版本升级字段变化 → Orca 已用 zod schema 校验（`acp-session-setup.ts:32 Request<T> … z.ZodType<T>`），移植时保留 schema 校验与能力协商即可降级。
-  - 若部署在纯 Linux 服务器 → `orca serve` 可行，但 Claude/Codex 需各自登录态；AideanFleet 需管理多账号凭据（Orca 有 `claude-accounts/codex-accounts` 可参考）。
+  - 若部署在纯 Linux 服务器 → `orca serve` 可行，但 Claude/Codex 需各自登录态；WorkFleet 需管理多账号凭据（Orca 有 `claude-accounts/codex-accounts` 可参考）。
   - 若用户不需要总控 → Orca 的编排可完全不启用，输入端运行时仍有价值。
 
 ### 5.2 第二轮 苏格拉底追问
@@ -203,19 +203,19 @@ ai-vault 扫描各 CLI 转录目录 → `session-search-indexer.ts`/`index-write
 
 ### 5.3 第三轮 双向钢人论证
 
-**主张 A：以 Orca 为 AideanFleet 的“输入端运行时”，AideanFleet 只做 IM 网关 + 路由 + 总控外发策略。**
+**主张 A：以 Orca 为 WorkFleet 的“输入端运行时”，WorkFleet 只做 IM 网关 + 路由 + 总控外发策略。**
 - 支持：输入端覆盖最全（45 agent 条目，三通路）、会话恢复/检索/`/clear` 现成、`orca serve` 可无头、编排协议成熟、MIT。
 - 反对：① 无公开稳定的“外部程序订阅 Orca 事件/注入消息”的 API 契约（需走其 RPC/CLI，版本漂移风险高，`AGENTS.md` 明言 mixed versions 是常态）；② 用户不一定愿意装 Orca；③ 依赖一个日更项目的内部 CLI 输出格式，耦合脆弱。
 - 裁决：反对意见 ① 未被排除（`证据不足`：未审计 runtime RPC 是否对第三方开放）→ **作为 V0.0.1 的“可选集成”而非必需底座**。
 
-**主张 B：移植 Orca 的模块（ACP client、编排 schema/状态机、调度解析、会话索引）到 AideanFleet 自有运行时。**
+**主张 B：移植 Orca 的模块（ACP client、编排 schema/状态机、调度解析、会话索引）到 WorkFleet 自有运行时。**
 - 支持：MIT；模块边界清晰（schema 与纯函数多）；可去 Electron 化；完全掌控。
 - 反对：抽取工作量大；后续无法自动享受上游修复。
 - 裁决：工作量可接受（只取 4 个子系统的核心）→ **主张 B 成立，作为主路线**；主张 A 作为备选集成。
 
 ### 5.4 最终判断
 
-1. **结论**：Orca 是 **AideanFleet 输入端与总控编排的首要参考与代码移植来源**；不整体 fork；输出端/路由/群发/知识库需另补（`部分确认`）。
+1. **结论**：Orca 是 **WorkFleet 输入端与总控编排的首要参考与代码移植来源**；不整体 fork；输出端/路由/群发/知识库需另补（`部分确认`）。
 2. **依据**：§2、§3。
 3. **代码证据**：`acp-session-setup.ts:34-63`、`acp-launch-specs.ts:113,157,189`、`coordinator.ts:36,146,159-305`、`create-core-tables-sql.ts:5-49`、`create-graph-tables-sql.ts:115-218`、`automation-schedules.ts:10-26`、`service.ts:41,115-133,233-300`、`session-search-schema.ts:20-90`、`structured-session-lineage.ts:24`、`notification-delivery-service.ts:27,100-115`、`cli/specs/serve.ts:6-9`。
 4. **命令证据**：clone 成功；GitHub API；`git ls-files` 计数；`git grep` IM 无命中。
@@ -223,7 +223,7 @@ ai-vault 扫描各 CLI 转录目录 → `session-search-indexer.ts`/`index-write
 6. **局限**：仓库巨大，仅审读相关子系统；运行期并发、资源占用、中文 FTS 未验证。
 7. **未验证**：RRULE COUNT=1；Cursor/Zcode/Coze 转录读取；runtime RPC 对第三方的开放度。【V0.0.2更新】前两项已核实（COUNT 不支持；Cursor/Zcode 有解析器、Coze 无）；仅剩 runtime RPC 开放度 `证据不足`。
 8. **风险**：上游高速变更导致移植件过时；Electron 依赖隐性渗透到被移植模块。
-9. **下一步**：(a) 精读 `src/main/acp/acp-json-rpc-peer.ts`、`acp-permission-requests.ts` 作为输入端适配器蓝本；(b) 把编排 schema 与 PentAGI 状态机合并成 AideanFleet 总控 ER 图；(c) 对 FTS5 中文检索做最小实验。
+9. **下一步**：(a) 精读 `src/main/acp/acp-json-rpc-peer.ts`、`acp-permission-requests.ts` 作为输入端适配器蓝本；(b) 把编排 schema 与 PentAGI 状态机合并成 WorkFleet 总控 ER 图；(c) 对 FTS5 中文检索做最小实验。
 10. **是否进入下一阶段**：**允许**进入“输入端适配层 + 总控持久层”设计阶段。
 
 ---
@@ -243,9 +243,9 @@ ai-vault 扫描各 CLI 转录目录 → `session-search-indexer.ts`/`index-write
 
 ---
 
-## 7. 对 AideanFleet 的可复用清单（精确到模块）
+## 7. 对 WorkFleet 的可复用清单（精确到模块）
 
-| Orca 模块 | 复用方式 | 用作 AideanFleet 的 |
+| Orca 模块 | 复用方式 | 用作 WorkFleet 的 |
 |---|---|---|
 | `src/main/acp/acp-session-setup.ts`、`acp-json-rpc-peer.ts`、`acp-launch-specs.ts`、`acp-dialects/` | **移植（剥离 Electron）** | 输入端 ACP 适配器：能力协商、new/load/resume、方言扩展、表驱动注册 |
 | 【V0.0.2更新】`acp-launch-specs.ts` 的 `managedRuntime` + 回收原语（#28460/#28507/#29023） | **参考** | 输入端 CLI 的“按需安装/钉版/回收旧版”管理器 |

@@ -5,8 +5,8 @@ from coverage import COV, V
 from scores import S
 from longlist import LL
 NAMES={"OCL":"OpenClaw","CCC":"cc-connect","AION":"AionUi+AionCore","ASB":"AstrBot","ACPX":"acpx","PPC":"Paperclip","ORC":"Orca",
-"WCB":"WechatClawbot","PTG":"PentAGI","HDS":"Hindsight","BF":"BettaFish","AFX":"AideanFleet 现有仓 v0.4.0"}
-ROLE={"OCL":"A","CCC":"A","AION":"A","ASB":"A","PPC":"A","ORC":"A","AFX":"A(承载仓)","ACPX":"B","WCB":"B","PTG":"B","HDS":"B","BF":"B"}
+"WCB":"WechatClawbot","PTG":"PentAGI","HDS":"Hindsight","BF":"BettaFish","OLD":"旧内部项目"}
+ROLE={"OCL":"A","CCC":"A","AION":"A","ASB":"A","PPC":"A","ORC":"A","OLD":"A(承载仓)","ACPX":"B","WCB":"B","PTG":"B","HDS":"B","BF":"B"}
 GAP={"OCL":["R-102","R-103","R-105","R-106","R-107","R-110","R-311"],
 "CCC":["R-301","R-302","R-303","R-304","R-306","R-307","R-209","R-311","R-504","R-505"],
 "AION":["R-601","R-603","R-604","R-605","R-606","R-607","R-608","R-609","R-610"],
@@ -16,7 +16,7 @@ GAP={"OCL":["R-102","R-103","R-105","R-106","R-107","R-110","R-311"],
 "ORC":["R-201","R-202","R-207","R-208","R-210","R-501","R-502","R-504","R-505","R-601","R-605","R-608","R-610"],
 "WCB":["R-302","R-307","R-309"],
 "PTG":["R-601","R-603","R-604","R-605","R-606","R-607","R-608","R-609","R-610"],
-"AFX":["R-112","R-601","R-602","R-603","R-605","R-606","R-607","R-608","R-610","R-611"]}
+"OLD":["R-112","R-601","R-602","R-603","R-605","R-606","R-607","R-608","R-610","R-611"]}
 EXTRA_B={"HDS":(["R-506","R-507","R-508","R-509"],"●●◐●"),"BF":(["R-603","R-604","R-924"],"◐◐◐")}
 def anchor(p,p0full=False):
     if p>=0.85 and p0full: return 5

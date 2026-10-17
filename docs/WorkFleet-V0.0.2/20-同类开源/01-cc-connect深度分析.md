@@ -16,11 +16,11 @@
 ## 1. 5W1H 第一轮拆解
 
 - **What**：本地常驻进程，把本机的 Coding Agent CLI（以子进程方式运行）桥接到 IM。核心抽象有三个：`Platform`、`Agent`/`AgentSession`、`Engine`（每个 project 一个 Engine）。
-- **Why（作者动机）**：让开发者"在手机 IM 上远程操控本地 Claude Code"。这与 AideanFleet 的"多工具 ↔ 一个微信"在输入、输出两端是同一个方向，但它**以 project 为中心，而不是以路由为中心**。
+- **Why（作者动机）**：让开发者"在手机 IM 上远程操控本地 Claude Code"。这与 WorkFleet 的"多工具 ↔ 一个微信"在输入、输出两端是同一个方向，但它**以 project 为中心，而不是以路由为中心**。
 - **Where/When**：运行在开发者自己的设备上（`run_as_user` 只支持 POSIX，见 `config/config.go:512-521`）。各端口：Management API/Web `9820`、Bridge WS `9810`、Webhook `9111`（`config.example.toml:392-470`），**与 Aidean 规定的 3000/3333 无冲突**，但都需要改成可配置的统一入口。
 - **Who**：输入端 16 种 agent 适配器（`agent/`），输出端 20 种平台（`platform/`）。
 - **How**：TOML 配置 → `main.go` 遍历 `cfg.Projects`，为每个 project 创建 1 个 Agent 和 N 个 Platform，再组装成 Engine（`cmd/cc-connect/main.go:361-421`）。
-- **What if**：如果多个 project 配置了同一个 IM 凭证（例如同一个微信 iLink token），会创建多个 Platform 实例各自长轮询。行为未知，`证据不足`。这是 AideanFleet 的关键风险点。
+- **What if**：如果多个 project 配置了同一个 IM 凭证（例如同一个微信 iLink token），会创建多个 Platform 实例各自长轮询。行为未知，`证据不足`。这是 WorkFleet 的关键风险点。
 
 ## 2. 架构与关键代码证据
 

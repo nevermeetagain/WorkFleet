@@ -109,7 +109,7 @@ for t in md_tables("01-需求分解与分析规划/05-验收标准与指标.md")
         if t[1][0].startswith("K-"):
             if not rows: rows.append(t[0]+["V0.0.2 本轮证据"])
             rows+= [r for r in t[1:] if r[0].startswith("K-")]
-ev={"K-47":"本轮 pytest：502 passed / 2 failed / 24 skipped","K-34":"20 万合成 FTS p95 1.7ms（部分确认）","K-11":"合成批量 15.4k 行/秒（单事务，非持续）",
+ev={"K-47":"〔内部实测数据已移除〕","K-34":"20 万合成 FTS p95 1.7ms（部分确认）","K-11":"合成批量 15.4k 行/秒（单事务，非持续）",
     "K-22":"未测（PoC-1）；额度推演 25 条/天≈4 次入站","K-15":"推算 1 万人 TG 6.2 分钟","K-32":"holiday-cn 2027 为空→降级告警必须触发","K-04":"python-sdk 0.12.1 API 面完整，端到端未测","K-05":"未测"}
 for r in rows[1:]:
     while len(r)<len(rows[0])-1: r.append("")
@@ -129,6 +129,6 @@ for r in tabs[0][1:]: rows.append(["★ 必须裁定",r[0],r[1],r[2],r[3],r[4],r
 for r in tabs[1][1:]: rows.append(["其他",r[0],r[1],r[2],r[3],r[4],""])
 for r in tabs[2][1:]: rows.append(["已由证据裁定",r[0],r[1],r[2],"",r[3],""])
 sheet("待裁定",rows,[12,10,30,48,40,36,12])
-out=ROOT+"40-综合/AideanFleet-V0.0.2-汇总表.xlsx"
+out=ROOT+"40-综合/WorkFleet-V0.0.2-汇总表.xlsx"
 wb.save(out)
 for ws in wb.worksheets: print(ws.title, ws.max_row, ws.max_column)

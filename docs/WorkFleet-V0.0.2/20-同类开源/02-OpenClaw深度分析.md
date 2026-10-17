@@ -15,11 +15,11 @@
 ## 1. 5W1H
 
 - **What**：自托管的"个人 AI 网关"。Gateway 进程统一管理 channels（IM）、agents（带独立 workspace、会话、凭证的人格）、bindings（路由）、cron（自动化）、memory、skills。Coding CLI 不是一等输入，而是以 **ACP harness**（acpx 插件）或 **CLI backend** 的形式被 OpenClaw Agent 调用。
-- **Why**：作者的定位是"把助手带到你所在的聊天软件"，而 AideanFleet 的定位是"把多个工具汇聚到少量 IM"。两者方向相反，但路由层可以互通。
+- **Why**：作者的定位是"把助手带到你所在的聊天软件"，而 WorkFleet 的定位是"把多个工具汇聚到少量 IM"。两者方向相反，但路由层可以互通。
 - **Where/When**：Gateway 默认端口 `18789`（`docs/web/control-ui.md:13`），配置文件 `~/.openclaw/openclaw.json`（JSON5，`docs/gateway/configuration.md:10`）。
 - **Who**：内置 channel 有 telegram、discord、feishu、slack、whatsapp、signal、matrix、msteams 等（见 `extensions/` 列表）；**微信**由腾讯维护的外部插件提供（`docs/channels/wechat.md`）；**QQ** 由 `@tencent-connect/openclaw-qqbot` 提供（`docs/channels/qqbot.md`）；`docs/channels/` 中**没有钉钉**。
 - **How**：入站 → channel 插件规范化 → `resolveAgentRoute` 选出 agent 和 sessionKey → agent turn（内置模型、ACP harness 或 sub-agent）→ 原路回复。
-- **What if**：如果把 OpenClaw 只当"路由 + 渠道层"用、把 Coding CLI 当 ACP harness 用，AideanFleet 的多对多可以用 agents × bindings × accounts 表达；代价是必须接受 OpenClaw 自己的 Agent 运行时（模型、凭证、记忆）。
+- **What if**：如果把 OpenClaw 只当"路由 + 渠道层"用、把 Coding CLI 当 ACP harness 用，WorkFleet 的多对多可以用 agents × bindings × accounts 表达；代价是必须接受 OpenClaw 自己的 Agent 运行时（模型、凭证、记忆）。
 
 ## 2. 架构与代码证据
 

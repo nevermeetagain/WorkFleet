@@ -6,7 +6,6 @@
 
 | 对象 | SHA / 版本 | 获取 | 用于 |
 |---|---|---|---|
-| 用户仓 aideanew/AideanFleet | `a9a24edfc30a2c5be4450e9455fb367fe3fd0de5`（v0.4.0，2026-10-13） | 本地 `work/_refs/AideanFleet-existing`（未修改） | AFX 评分、pytest 实测 |
 | WechatClawbot | `4ec3bbe8` | `10-参考项目/11` | 参考 |
 | Paperclip | `0528cc7e` | `10-参考项目/12` | 参考 |
 | PentAGI | `843dfeb` | `10-参考项目/13` | 参考 |
@@ -38,7 +37,6 @@
 | C7 | OpenClaw 关键文件 md5（旧/新 SHA） | `resolve-route.ts`、`cron/types.ts`、`broadcast-groups.md`、`wechat.md` 一致；extensions 无 dingtalk | `40-综合/01 §0` |
 | C8 | `curl raw…/zai-org/ZCode/main/{README.md,LICENSE,package.json}`；`grep -i acp` | README 无 acp；Apache-2.0；3.15.1 | refs-commits |
 | C9 | `curl pypi.org/pypi/agent-client-protocol/json` | 0.12.1 最新稳定；rc1–rc3 | refs-commits |
-| C10 | `cp -r AideanFleet-existing /tmp/afx && python -m venv … && pytest tests -q -p no:cacheprovider` | **502 passed, 2 failed, 24 skipped（52.53s）** | `40-综合/03 §0`、`09 §0` |
 | C11 | `pytest tests/e2e/test_walking_skeleton.py tests/rel/test_watchdog.py` | 失败断言：`blocked==1`；“watchdog 未能在时限内自动拉起新进程” | 同上 |
 | C12 | `pip install agent-client-protocol==0.12.1`；`dir(acp.ClientSideConnection)`、`dir(acp.Client)` | API 面见 `05 §4.1` | `40-综合/05` |
 | C13 | `python3 compute.py`（评分）/ `options.py`（方案）/ `wechat_capacity.py`（额度） | 见 `40-综合/01`、`04 §4.7`、`08 §1.4` | `50-附录/评分底稿/` |
@@ -46,7 +44,7 @@
 | C15 | `sqlite3 :memory: < v001_fts_defect.sql` | V0.0.1 DDL FTS 命中 0（缺陷复现） | `v001_fts_defect_output.txt` |
 | C16 | `python3 fts_bench.py` | 20 万合成：写入 15.4k 行/秒；count p95 1.7ms | `fts_bench_output.txt` |
 | C17 | `curl raw…/holiday-cn/master/{2026,2027}.json` | 2026 调休上班 6 天；2027 `days: []` | `40-综合/07 §0` |
-| C18 | `python3 build_xlsx.py` | 8 个工作表 | `40-综合/AideanFleet-V0.0.2-汇总表.xlsx` |
+| C18 | `python3 build_xlsx.py` | 8 个工作表 | `40-综合/WorkFleet-V0.0.2-汇总表.xlsx` |
 
 ## 3. 未执行 / 失败
 - 未对任何候选项目做运行时测试（按任务“不重做深度分析”）。

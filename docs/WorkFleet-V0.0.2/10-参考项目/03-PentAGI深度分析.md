@@ -1,4 +1,4 @@
-# 03 · PentAGI 深度分析（AideanFleet V0.0.2 修订版，基于 V0.0.1 基线）
+# 03 · PentAGI 深度分析（WorkFleet V0.0.2 修订版，基于 V0.0.1 基线）
 
 > 【V0.0.2更新】2026-10-17 复核：上游 `main` 仍为 `843dfeb`（`git ls-remote` 与 GitHub API `pushed_at`=2026-10-10 双证据），**代码零变更**，原 `file:line` 与核心结论全部维持。本次补充：完整 git 历史（952 提交、10 个 tag）、社区数据刷新、若干 V0.0.1 未覆盖的既有事实（多租户、无状态注销、持久化队列 RFC）。架构与实现路线详见 `13-PentAGI技术架构与实现路线.md`。
 
@@ -15,7 +15,7 @@
 
 PentAGI 是一个 **“单用户输入 → 单一主控 LLM 智能体 → 内部专家子智能体 → Docker 沙箱工具”** 的 **渗透测试自动化平台**（Go 后端 + React 前端 + PostgreSQL/pgvector）。它 **不是 ACP 网关**：没有任何外部编码 CLI（Claude Code/Codex…）作为输入端，也没有任何 IM 作为输出端，更没有多对多路由与定时任务。
 
-它对 AideanFleet 的真正价值集中在 **「总控模式」的引擎设计范式**：
+它对 WorkFleet 的真正价值集中在 **「总控模式」的引擎设计范式**：
 1. `primary_agent` + `generator`/`refiner` 的“分解→执行→每步后重规划”闭环（≈ 职业经理人明确需求、分配任务）；
 2. `adviser`(mentor)/`reflector`/`execution monitor` 的“执行监督与纠偏”机制（≈ 总控把关）；
 3. `ask` 屏障工具 + `PutInput` 的“暂停等人类回复”机制（≈ 重大决策上报输出端）；
@@ -43,7 +43,7 @@ PentAGI 是一个 **“单用户输入 → 单一主控 LLM 智能体 → 内部
 
 ### 1.2 模块布局（来源：`CLAUDE.md` §Architecture + `ls backend/pkg`）
 
-| 包 | 角色 | 与 AideanFleet 的关系 |
+| 包 | 角色 | 与 WorkFleet 的关系 |
 |---|---|---|
 | `cmd/pentagi/` | 启动：配置、租户 schema、DB 池、goose 迁移、Docker、providers、恢复 flow、HTTP | 启动编排可参考 |
 | `pkg/controller/` | Flow/Task/Subtask 运行时：worker 生命周期，日志发布到订阅中心 | **总控运行时范式** |
@@ -104,7 +104,7 @@ GraphQL createFlow / REST
 ```
 要点（`已确认`）：
 - **单 flow 单 worker goroutine + 输入 channel**，同一 flow 内任务串行；`CLAUDE.md:218` 明言 “there is no queue”。
-- **Waiting 即“上报等待人类”**：有 Waiting 任务时新输入被当作回复注入，而不是新任务（`flow.go:1354-1365`）。这正是 AideanFleet 总控“上报→用户在 IM 回复→继续执行”需要的语义。
+- **Waiting 即“上报等待人类”**：有 Waiting 任务时新输入被当作回复注入，而不是新任务（`flow.go:1354-1365`）。这正是 WorkFleet 总控“上报→用户在 IM 回复→继续执行”需要的语义。
 - 重启恢复：`LoadFlows`（`flows.go:253`）+ worker 启动时续跑（`flow.go:1307`）。
 
 ### 3.2 Task：分解-执行-重规划闭环
@@ -119,7 +119,7 @@ taskWorker.Run                             pkg/controller/task.go:341
  writeResult → reporter                    task.go:382
 ```
 - 子任务由 `generator` 生成（`provider.go:353 GenerateSubtasks` → `performers.go:96 performSubtasksGenerator`），每完成一个由 `refiner` 改写剩余计划（`provider.go:436`）。
-- **对总控的启示**：“职业经理人”= generator+refiner+reporter 三个提示词角色 + 一个 primary_agent 执行循环；可直接移植为 AideanFleet 的 `Manager` 状态机，只是把“执行子任务”换成“向某个外部 ACP 会话派发 prompt 并等待 `worker_done`”。
+- **对总控的启示**：“职业经理人”= generator+refiner+reporter 三个提示词角色 + 一个 primary_agent 执行循环；可直接移植为 WorkFleet 的 `Manager` 状态机，只是把“执行子任务”换成“向某个外部 ACP 会话派发 prompt 并等待 `worker_done`”。
 
 ### 3.3 智能体链（单个 agent 的 ReAct 循环与护栏）
 
@@ -130,12 +130,12 @@ taskWorker.Run                             pkg/controller/task.go:341
 - **执行监督（mentor）**：同名工具连续调用 ≥ sameThreshold 或总调用 ≥ totalThreshold 时触发 adviser（`helpers.go:165-191`，阈值来自 `ExecutionMonitorSameToolLimit/TotalToolLimit` 配置，`providers.go:401-403`）。
 - 重复检测 `repeatingDetector`（`performer.go:73`）。
 
-→ 这是 AideanFleet “总控把关”最值得借鉴的 **三道闸门**：输出格式闸（reflector）、行为异常闸（mentor）、迭代预算闸（maxCalls）。
+→ 这是 WorkFleet “总控把关”最值得借鉴的 **三道闸门**：输出格式闸（reflector）、行为异常闸（mentor）、迭代预算闸（maxCalls）。
 
 ### 3.4 专家委派 = 工具调用
 
 primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memorist/search/maintenance`（`pkg/tools/registry.go:13-35`），对应 handler 在 `pkg/providers/handlers.go:83-881`（如 `GetCoderHandler :261`）。每个专家又跑自己的 `performAgentChain`，并以 `code_result/hack_result/...` 屏障工具返回结果。
-→ **“员工”接口 = 一个工具（输入：问题+上下文，输出：结构化结果）**。AideanFleet 可把每个外部 CLI 会话包装成同构的“员工工具”，让总控 LLM 用 function-calling 派工。
+→ **“员工”接口 = 一个工具（输入：问题+上下文，输出：结构化结果）**。WorkFleet 可把每个外部 CLI 会话包装成同构的“员工工具”，让总控 LLM 用 function-calling 派工。
 
 ### 3.5 Assistant 旁路对话 + flow_manager
 
@@ -155,12 +155,12 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 
 ## 4. 全方位维度分析
 
-| 维度 | 现状（证据） | 对 AideanFleet 的意义 |
+| 维度 | 现状（证据） | 对 WorkFleet 的意义 |
 |---|---|---|
 | 前端 | React 19 + Vite 8 + Tailwind 4 + Apollo Client 4 + graphql-ws（`frontend/package.json`）；shadcn/Radix；按 `features/<domain>` 组织 | 管理后台技术栈可同构参考（流程/日志实时视图） |
 | 后端 | Go + Gin + gqlgen + sqlc + goose；REST+GraphQL 双轨；`pkg/server/router.go` 权限中间件 | 单体，高质量；适合作为“总控服务”语言选型参照（Go 并发模型适合大量会话） |
 | 数据 | PG + pgvector；核心表 flows/tasks/subtasks/msgchains/toolcalls/msglogs/termlogs（`initial_state.sql:109-285`）；状态枚举 `created/running/waiting/finished/failed` | **任务-子任务-消息链** 三级模型可直接借给总控的 Meeting/Task/Dispatch 表 |
-| 交互 | Web UI + GraphQL 订阅 17 类事件（`schema.graphqls:1126-1150` flowCreated…vectorStoreLogAdded） | AideanFleet 的交互面是 IM，需另建；事件分类可借鉴 |
+| 交互 | Web UI + GraphQL 订阅 17 类事件（`schema.graphqls:1126-1150` flowCreated…vectorStoreLogAdded） | WorkFleet 的交互面是 IM，需另建；事件分类可借鉴 |
 | 逻辑 | 串行子任务、每步重规划、三道护栏、ask 屏障、assistant 旁路 | 总控逻辑的最佳开源范式之一 |
 | 组件 | `tools.Tool` 接口（`Handle/IsAvailable`）、`ExecutorHandler`、`Prompter.RenderTemplate`、`csum.Summarizer` | 可按接口思想重写 |
 | 复用 | 领域耦合重：39 个模板全部面向渗透测试（`pkg/templates/prompts`）；工具依赖 Docker 容器 | 代码复用率低，设计复用率高 |
@@ -182,15 +182,15 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 ### 5.1 第一轮 5W1H
 
 - **What**：PentAGI 已实现“单入口→主控智能体→内部专家→沙箱工具”的完整闭环；缺外部 CLI 输入、IM 输出、路由模式、调度、画像。已被代码证实的是第 3 节全部调用链；未被证实的是运行期效果（未部署）。
-- **Why**：用户需要“总控=职业经理人”，而 PentAGI 本质上就是一个“经理人+专家团队”的产品化实现；研究它是为了避免从零设计总控状态机。根因层面：AideanFleet 的总控难点不在 LLM 调用，而在 **状态机（等待/恢复/重规划）+ 护栏 + 旁路对话**，PentAGI 恰好覆盖这三点。
-- **Where/When**：可借鉴部位集中在 `pkg/controller/{flow,task,subtask,assistant}.go`、`pkg/providers/{performer,performers,handlers,assistant,helpers}.go`、`pkg/tools/{registry,flow_manager,memory}.go`。应在 AideanFleet 总控模块设计阶段（输入/输出适配器之后）引入。端口：PentAGI 用 8443；AideanFleet 的 3000/3333 约束与之无冲突（各自独立进程）。
-- **Who**：作者 vxcontrol；AideanFleet 侧由“总控引擎”负责人消化范式；法务确认 EULA。
-- **How**：抽取“状态机 + 角色模板 + 护栏阈值 + flow_manager 工具集”为设计文档，用 AideanFleet 选定语言重写；员工执行体替换为 ACP 会话。
+- **Why**：用户需要“总控=职业经理人”，而 PentAGI 本质上就是一个“经理人+专家团队”的产品化实现；研究它是为了避免从零设计总控状态机。根因层面：WorkFleet 的总控难点不在 LLM 调用，而在 **状态机（等待/恢复/重规划）+ 护栏 + 旁路对话**，PentAGI 恰好覆盖这三点。
+- **Where/When**：可借鉴部位集中在 `pkg/controller/{flow,task,subtask,assistant}.go`、`pkg/providers/{performer,performers,handlers,assistant,helpers}.go`、`pkg/tools/{registry,flow_manager,memory}.go`。应在 WorkFleet 总控模块设计阶段（输入/输出适配器之后）引入。端口：PentAGI 用 8443；WorkFleet 的 3000/3333 约束与之无冲突（各自独立进程）。
+- **Who**：作者 vxcontrol；WorkFleet 侧由“总控引擎”负责人消化范式；法务确认 EULA。
+- **How**：抽取“状态机 + 角色模板 + 护栏阈值 + flow_manager 工具集”为设计文档，用 WorkFleet 选定语言重写；员工执行体替换为 ACP 会话。
 - **What if**：
   - 若 EULA 被认定约束衍生设计 → 只能参考公开文档层面的思想，代码零拷贝（已如此建议）。
   - 若总控需并发多员工 → PentAGI 串行模型不适用，需改 DAG（Orca 方案）。
   - 若用户只用便宜模型做总控 → reflector/mentor 的多次 LLM 调用会放大成本，需可关（PentAGI 已有 `ExecutionMonitorEnabled` 开关，`providers.go:401`）。
-  - 若 Docker 不可用 → PentAGI 整体不可运行；AideanFleet 不应依赖它运行。
+  - 若 Docker 不可用 → PentAGI 整体不可运行；WorkFleet 不应依赖它运行。
 
 ### 5.2 第二轮 苏格拉底追问（关键结论）
 
@@ -203,7 +203,7 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 
 ### 5.3 第三轮 双向钢人论证
 
-**主张 A：用 PentAGI 作为 AideanFleet 总控引擎底座（fork 后改造）。**
+**主张 A：用 PentAGI 作为 WorkFleet 总控引擎底座（fork 后改造）。**
 - 支持：总控所需的状态机、角色模板、护栏、旁路助手、可编辑提示词、13 家 provider、按角色选模型、记忆、权限、实时订阅 **全部现成**；工程质量高、测试纪律严。
 - 反对：① EULA 限制用途与再分发；② “员工”是内部 LLM，替换为外部 ACP 会话需重写 performer/handlers/tools 三层，等于重写核心；③ 串行子任务不满足“多输入端会议/并发派工”；④ 强依赖 Docker 沙箱、PG、scraper，设备端太重；⑤ 39 个模板全为渗透测试域。
 - 裁决：反对意见 ①②③④ **仍成立且未被排除** → **主张 A 不成立**。
@@ -215,7 +215,7 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 
 ### 5.4 最终判断
 
-1. **明确结论**：PentAGI **不能作为 AideanFleet 底座**；其 **总控设计范式值得系统借鉴**（`已确认`：代码证据；效果 `证据不足`）。
+1. **明确结论**：PentAGI **不能作为 WorkFleet 底座**；其 **总控设计范式值得系统借鉴**（`已确认`：代码证据；效果 `证据不足`）。
 2. **依据**：§3 调用链、§2 需求表。
 3. **代码证据**：`flow.go:1288-1406`、`task.go:341-380`、`performer.go:36-38,58,611`、`helpers.go:165-191`、`assistant.go:355-431`、`registry.go:12-53`、`EULA.md` License Grant 段。
 4. **命令证据**：`git clone --depth 1` 成功；`grep` 无 IM/cron；`wc -l` 规模；GitHub API 社区数据。
@@ -223,7 +223,7 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 6. **局限**：未实际部署验证护栏效果、并发安全与资源占用。
 7. **未验证**：Assistant 与执行 worker 同时写同一子任务时的竞态；Graphiti 实际收益。
 8. **风险**：EULA 法律风险；过度模仿串行模型导致总控吞吐低。
-9. **下一步**：把 §6 的“总控引擎借鉴清单”交给 AideanFleet 总控设计文档；与 Orca 的 Run/Task/Dispatch/Mailbox 模型合并成统一总控状态机。
+9. **下一步**：把 §6 的“总控引擎借鉴清单”交给 WorkFleet 总控设计文档；与 Orca 的 Run/Task/Dispatch/Mailbox 模型合并成统一总控状态机。
 10. **是否进入下一阶段**：**允许**（作为设计参考进入总控架构设计），**不允许**作为代码依赖进入实现阶段，直至法务确认。
 
 > 【V0.0.2更新】结论不变。实现路线考古补充：总控能力分三步长出——工具委派（初始落库 2026-03-26）→ Assistant + `flow_manager`（`5067e8f`，2026-04-24）→ 路由门控与上下文窗口压缩（`6f3d29c` “port major fixes”，2026-09-25，853 文件 ±16.8 万行，全仓最大重构）。详见 `13-PentAGI技术架构与实现路线.md` §11。
@@ -245,9 +245,9 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 
 ---
 
-## 7. 对 AideanFleet 的可复用清单（精确到模块）
+## 7. 对 WorkFleet 的可复用清单（精确到模块）
 
-| PentAGI 模块 | 复用方式 | 用作 AideanFleet 的 |
+| PentAGI 模块 | 复用方式 | 用作 WorkFleet 的 |
 |---|---|---|
 | `pkg/controller/flow.go` worker 循环 + Waiting 语义 | **设计移植** | 总控 `ManagerWorker`：输入 channel；有待答问题时新消息视为回复 |
 | `pkg/controller/task.go:341` Pop→Run→Refine 循环 | **设计移植** | 总控“派工-复盘”循环，子任务改为 ACP 派发 |
@@ -259,4 +259,4 @@ primary_agent 通过“工具”委派给专家：`coder/pentester/advice/memori
 | `pkg/config.GetSecretPatterns` + anonymizer | **机制移植** | 外发 IM 前的密钥脱敏 |
 | 其余（docker、searchers、pentest 模板、installer） | 不复用 | — |
 
-> 文件索引：本报告依赖的本地仓库 `/workspace/work/refs/pentagi`；交叉引用 `/workspace/projects/803e4281-858a-4ce1-8c5c-b9fc24a89184/work/AideanFleet-V0.0.1/10-参考项目/04-Orca深度分析.md`、`05-Hindsight深度分析.md`。
+> 文件索引：本报告依赖的本地仓库 `/workspace/work/refs/pentagi`；交叉引用 `/workspace/projects/803e4281-858a-4ce1-8c5c-b9fc24a89184/work/WorkFleet-V0.0.1/10-参考项目/04-Orca深度分析.md`、`05-Hindsight深度分析.md`。

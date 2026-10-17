@@ -35,7 +35,7 @@
 - API 端口 **8888**、UI 端口 **9999**；Docker 一键，内嵌 pg0（嵌入式 PostgreSQL）或外接 PostgreSQL / **Oracle AI Database 23ai**；Kubernetes Helm；Hindsight Cloud 托管（99.9% SLA）。
 - 客户端：Python、Node/TS、Go、CLI、REST。
 - 25+ LLM 供应商，**支持订阅型凭证**（openai-codex、claude-code、cursor、github-copilot）——即用你已有的 IDE 订阅当提取模型。
-- **LLM Wrapper 两行接入**：`hindsight-litellm` 的 `wrap_openai` / `wrap_anthropic` 包装现有 client，**每次调用自动存取记忆**（对存量代码零侵入——AideanFleet 可用同样手段给所有输入端 agent 透明挂记忆）。
+- **LLM Wrapper 两行接入**：`hindsight-litellm` 的 `wrap_openai` / `wrap_anthropic` 包装现有 client，**每次调用自动存取记忆**（对存量代码零侵入——WorkFleet 可用同样手段给所有输入端 agent 透明挂记忆）。
 
 ### 2.4 coding agents 集成包（对用户需求杀伤力最大）【已确认】
 - 为 Claude Code、Codex、Cursor、GitHub Copilot、OpenCode、Cline、Aider、Zed、Continue、Roo Code、OpenHands 等 20+ 客户端提供集成；
@@ -85,11 +85,11 @@ PII 模式库是内置基线，不代表合规完备；部署在用户本地（�
 
 | 缺口 | 参考项目 | 补充方案 |
 |-----|---------|---------|
-| IM 通道/路由 | WeClaw / LangBot | AideanFleet 核心层 |
+| IM 通道/路由 | WeClaw / LangBot | WorkFleet 核心层 |
 | 定时任务 | Paperclip Routines | 心跳队列 |
 | 多智能体编排 | pentagi / BettaFish | 总控模式 |
 | 分身人格化（七维模板） | agenmod/immortal-skill（OpenClaw Soul Spec） | 用其模板体系给 Hindsight bank 定义身份 schema |
 
 ## 6. 结论
 
-Hindsight 是六个参考项目中**与"拓展功能"重合度最高、且可直接整装采用**的：知识库（E4）、身份 loop（E5，reflect 自动固化）、会话记忆（I5）一站式覆盖；MIT、独立服务、五路接入面（REST/SDK/CLI/MCP/Wrapper）让它能挂到任何输入端。定位：**AideanFleet 记忆层的第一候选，近乎确定采用**。部署形态：本地 Docker（API 8888），MVP 后期引入。
+Hindsight 是六个参考项目中**与"拓展功能"重合度最高、且可直接整装采用**的：知识库（E4）、身份 loop（E5，reflect 自动固化）、会话记忆（I5）一站式覆盖；MIT、独立服务、五路接入面（REST/SDK/CLI/MCP/Wrapper）让它能挂到任何输入端。定位：**WorkFleet 记忆层的第一候选，近乎确定采用**。部署形态：本地 Docker（API 8888），MVP 后期引入。

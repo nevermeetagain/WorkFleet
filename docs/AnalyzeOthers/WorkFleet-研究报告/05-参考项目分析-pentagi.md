@@ -88,7 +88,7 @@ Memory(id→Action, type[observation/conclusion], embedding vector, content)
 裁决：**机制移植，代码不移植**（且需查其许可证对借鉴的约束【待确认：本次抓取未含 license 字段】）。
 
 **Q：pgvector + Graphiti 双引擎是否过度设计？**
-对渗透域合理（主机/服务/漏洞天然图结构）。对 AideanFleet：MVP 用 Hindsight（一站式记忆）即可；团队模式做"项目-任务-agent"关系推理时再评估加图库。避免一步到位的过度工程【设计裁决】。
+对渗透域合理（主机/服务/漏洞天然图结构）。对 WorkFleet：MVP 用 Hindsight（一站式记忆）即可；团队模式做"项目-任务-agent"关系推理时再评估加图库。避免一步到位的过度工程【设计裁决】。
 
 **Q：2-3x token 开销换 2x 质量，用户能接受吗？**
 这正是总控模式的成本结构。对策（结合 Paperclip）：预算硬停 + 小模型走规划步（pentagi 明示 planner 对 <32B 模型收益最大）+ 可开关（默认只在复杂任务启用会议）。把成本决策权交给配置【设计建议】。
@@ -97,7 +97,7 @@ Memory(id→Action, type[observation/conclusion], embedding vector, content)
 
 | 缺口 | 参考项目 | 补充方案 |
 |-----|---------|---------|
-| IM 输入/输出通道 | WeClaw / LangBot | AideanFleet 通道层 |
+| IM 输入/输出通道 | WeClaw / LangBot | WorkFleet 通道层 |
 | 轻量部署（个人设备） | WeClaw（单二进制） | 编排内核独立成库，沙箱/图库全部可选依赖 |
 | 中文 IM 媒体管道 | WeClaw | 通道适配器 |
 | 定时任务 | Paperclip Routines | 心跳队列轻量版 |

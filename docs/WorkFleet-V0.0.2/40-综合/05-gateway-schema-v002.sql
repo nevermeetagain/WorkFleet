@@ -1,4 +1,4 @@
--- AideanFleet Gateway schema V0.0.2（data/gateway.db）
+-- WorkFleet Gateway schema V0.0.2（data/gateway.db）
 -- 设计稿：2026-10-17。基线 = _V0.0.1基线/40-综合/04 §6 + 05 §7；本版改动以 [V0.0.2] 标注。
 -- 约定：主键 ULID 文本；时间 UTC ISO-8601 文本；JSON 列 TEXT + json_valid CHECK；密钥只存 secret.id 引用。
 -- 持久化队列四原则（借 PentAGI RFC flow_concurrency.md，只借设计）：持久化(落表)、可见(status+position)、可管理(cancel/reprioritize)、显式晋升(只有调度器把 queued→running)。
