@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/identity/device-token-claims.schema.json",
+  "title": "device-token-claims",
+  "description": "设备令牌：256 bit 随机不透明串，库内存 SHA-256；配对码 8 位、10 分钟有效、一次性",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "deviceId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/deviceId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "ownerUserId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+    },
+    "issuedAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "rotatedFrom": {
+      "type": [
+        "string",
+        "null"
+      ]
+    }
+  },
+  "required": [
+    "deviceId",
+    "tenantId",
+    "ownerUserId",
+    "issuedAt",
+    "rotatedFrom"
+  ]
+}

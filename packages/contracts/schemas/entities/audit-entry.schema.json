@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/audit-entry.schema.json",
+  "title": "audit-entry",
+  "description": "审计条目（append-only）；action 例 delivery.sent、route.updated、device.revoked",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/auditId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "user",
+            "device",
+            "system",
+            "recipient",
+            "agent",
+            "supervisor"
+          ]
+        },
+        "refId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 64
+        }
+      },
+      "required": [
+        "kind",
+        "refId"
+      ]
+    },
+    "action": {
+      "type": "string",
+      "pattern": "^[a-z]+(\\.[a-z_]+)+$"
+    },
+    "resourceType": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40
+    },
+    "resourceId": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64
+    },
+    "detail": {
+      "type": "object"
+    },
+    "traceId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/traceId"
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "actor",
+    "action",
+    "resourceType",
+    "resourceId",
+    "detail",
+    "traceId",
+    "createdAt"
+  ]
+}

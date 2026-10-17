@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/ack.schema.json",
+  "title": "ack",
+  "description": "帧 ack，方向：both",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "upToSeq": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "upToSeq"
+  ]
+}

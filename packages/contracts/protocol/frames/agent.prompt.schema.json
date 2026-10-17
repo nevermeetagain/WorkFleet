@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.prompt.schema.json",
+  "title": "agent.prompt",
+  "description": "帧 agent.prompt，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "messageId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+    },
+    "body": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message-body.schema.json"
+    },
+    "from": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "recipientId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/recipientId"
+        },
+        "userId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+        },
+        "channelKind": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 32
+        },
+        "displayName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "authorized": {
+          "type": "boolean"
+        },
+        "groupSenderId": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 256
+        }
+      },
+      "required": [
+        "channelKind",
+        "authorized"
+      ]
+    },
+    "barrierId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/barrierId"
+    },
+    "untrusted": {
+      "type": "boolean",
+      "description": "true=IM/外部来源文本，节点须加来源标记且不得进入系统提示（G8）"
+    }
+  },
+  "required": [
+    "agentId",
+    "conversationId",
+    "generation",
+    "messageId",
+    "body",
+    "from",
+    "untrusted"
+  ]
+}

@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/notification-settings.schema.json",
+  "title": "notification-settings",
+  "description": "用户通知设置与备用渠道（REQ-F-030）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "userId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/userId"
+    },
+    "minPriorityWebPush": {
+      "enum": [
+        "p0",
+        "p1",
+        "p2",
+        "p3"
+      ]
+    },
+    "fallbackRecipientIds": {
+      "type": "array",
+      "maxItems": 3,
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/recipientId"
+      },
+      "description": "渠道健康告警与主渠道失败时的备用接收人，按序"
+    },
+    "healthAlertsEnabled": {
+      "type": "boolean"
+    },
+    "version": {
+      "type": "integer",
+      "minimum": 1
+    }
+  },
+  "required": [
+    "userId",
+    "minPriorityWebPush",
+    "fallbackRecipientIds",
+    "healthAlertsEnabled",
+    "version"
+  ]
+}

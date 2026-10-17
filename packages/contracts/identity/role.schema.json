@@ -1,0 +1,11 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/identity/role.schema.json",
+  "title": "role",
+  "type": "string",
+  "enum": [
+    "admin",
+    "operator",
+    "viewer"
+  ]
+}

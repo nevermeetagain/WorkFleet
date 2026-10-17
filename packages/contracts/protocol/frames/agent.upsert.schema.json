@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.upsert.schema.json",
+  "title": "agent.upsert",
+  "description": "帧 agent.upsert，方向：relay→node（控制台创建/修改智能体）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agent": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+    }
+  },
+  "required": [
+    "agent"
+  ]
+}

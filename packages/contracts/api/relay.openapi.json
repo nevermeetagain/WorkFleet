@@ -1,0 +1,4912 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "WorkFleet Relay API",
+    "version": "1.0.0",
+    "description": "契约 ① API（中转）。Schema 唯一源在 schemas/；本文件只编目端点。鉴权：x-auth=session（Cookie + 非 GET 需 X-CSRF-Token）| device（Bearer 设备令牌）| none。x-permission 对应 identity/permissions.json。分页：游标。幂等：带 Idempotency-Key 的 POST 24 小时内重复返回首次结果。"
+  },
+  "servers": [
+    {
+      "url": "https://relay.example.com"
+    }
+  ],
+  "jsonSchemaDialect": "https://json-schema.org/draft/2020-12/schema",
+  "paths": {
+    "/api/v1/auth/register": {
+      "post": {
+        "summary": "注册（同时建 personal 组织）",
+        "x-permission": "public",
+        "x-auth": "none",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/user.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "VALIDATION_FAILED",
+          "CONFLICT",
+          "RATE_LIMITED"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string",
+                    "minLength": 12,
+                    "maxLength": 128
+                  },
+                  "displayName": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password",
+                  "displayName"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/login": {
+      "post": {
+        "summary": "登录，设置会话 Cookie",
+        "x-permission": "public",
+        "x-auth": "none",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "user": {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/user.schema.json"
+                    },
+                    "tenants": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/tenant.schema.json"
+                      }
+                    },
+                    "csrf": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "tenants",
+                    "csrf"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "UNAUTHENTICATED",
+          "TOTP_REQUIRED",
+          "RATE_LIMITED"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "password": {
+                    "type": "string"
+                  },
+                  "totp": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "email",
+                  "password"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/auth/logout": {
+      "post": {
+        "summary": "登出",
+        "x-permission": "public",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/me": {
+      "get": {
+        "summary": "当前用户、当前组织、角色、权限列表",
+        "x-permission": "public",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "user": {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/user.schema.json"
+                    },
+                    "tenant": {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/tenant.schema.json"
+                    },
+                    "membership": {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/membership.schema.json"
+                    },
+                    "permissions": {
+                      "type": "array",
+                      "items": {
+                        "type": "string"
+                      }
+                    }
+                  },
+                  "required": [
+                    "user",
+                    "tenant",
+                    "membership",
+                    "permissions"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/me/switch-tenant": {
+      "post": {
+        "summary": "切换当前组织",
+        "x-permission": "public",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "NOT_FOUND"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "tenantId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "tenantId"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/members": {
+      "get": {
+        "summary": "成员列表",
+        "x-permission": "tenant.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/membership.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/members/invitations": {
+      "post": {
+        "summary": "邀请成员（返回一次性邀请链接）",
+        "x-permission": "member.invite",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "inviteUrl": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "inviteUrl",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "email": {
+                    "type": "string"
+                  },
+                  "role": {
+                    "$ref": "https://workfleet.dev/contracts/v1/identity/role.schema.json"
+                  },
+                  "projectScope": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "email",
+                  "role"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/members/{membershipId}": {
+      "patch": {
+        "summary": "改角色/项目范围",
+        "x-permission": "member.update_role",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/membership.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "CONFLICT",
+          "FORBIDDEN"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "role": {
+                    "$ref": "https://workfleet.dev/contracts/v1/identity/role.schema.json"
+                  },
+                  "projectScope": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "移除成员",
+        "x-permission": "member.remove",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "membershipId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/pairing-codes": {
+      "post": {
+        "summary": "生成 8 位配对码（10 分钟）",
+        "x-permission": "device.pair",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "code": {
+                      "type": "string",
+                      "pattern": "^[0-9A-Z]{8}$"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "code",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/claim": {
+      "post": {
+        "summary": "节点用配对码换设备令牌（节点调用，无会话）",
+        "x-permission": "public",
+        "x-auth": "none",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "device": {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/device.schema.json"
+                    },
+                    "deviceToken": {
+                      "type": "string"
+                    },
+                    "wsUrl": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "device",
+                    "deviceToken",
+                    "wsUrl"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "PAIRING_CODE_INVALID",
+          "RATE_LIMITED"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "os": {
+                    "enum": [
+                      "windows",
+                      "macos",
+                      "linux"
+                    ]
+                  },
+                  "nodeVersion": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "code",
+                  "name",
+                  "os",
+                  "nodeVersion"
+                ]
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/devices": {
+      "get": {
+        "summary": "设备列表",
+        "x-permission": "device.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/device.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{deviceId}/primary": {
+      "post": {
+        "summary": "设为主设备（总控默认运行处）",
+        "x-permission": "device.set_primary",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/device.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "NOT_FOUND",
+          "DEVICE_REVOKED",
+          "FORBIDDEN"
+        ],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{deviceId}/revoke": {
+      "post": {
+        "summary": "吊销设备令牌并断开",
+        "x-permission": "device.revoke",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/device.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/devices/{deviceId}/rotate-token": {
+      "post": {
+        "summary": "轮换设备令牌（节点下次连接时生效）",
+        "x-permission": "device.revoke",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/projects": {
+      "get": {
+        "summary": "项目树（扁平列表含 parentId）",
+        "x-permission": "project.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/project.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "新建项目（parentId 可空，深度≤3）",
+        "x-permission": "project.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/project.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "VALIDATION_FAILED",
+          "CONFLICT"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "slug": {
+                    "type": "string"
+                  },
+                  "parentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "slug"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/projects/{projectId}": {
+      "patch": {
+        "summary": "改名/归档/移动",
+        "x-permission": "project.write",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/project.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "archived": {
+                    "type": "boolean"
+                  },
+                  "parentId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/projects/{projectId}/overview": {
+      "get": {
+        "summary": "跨项目视图：子树汇总（未读、运行中、待审批）",
+        "x-permission": "project.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "nodes": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "projectId": {
+                            "type": "string"
+                          },
+                          "unread": {
+                            "type": "integer"
+                          },
+                          "running": {
+                            "type": "integer"
+                          },
+                          "pendingApprovals": {
+                            "type": "integer"
+                          }
+                        },
+                        "required": [
+                          "projectId",
+                          "unread",
+                          "running",
+                          "pendingApprovals"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "nodes"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "NOT_FOUND",
+          "FORBIDDEN"
+        ],
+        "parameters": [
+          {
+            "name": "projectId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/agents": {
+      "get": {
+        "summary": "智能体列表（可按 projectId/deviceId 过滤）",
+        "x-permission": "agent.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deviceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "登记智能体（下发到节点创建）",
+        "x-permission": "agent.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "ALIAS_TAKEN",
+          "DEVICE_OFFLINE",
+          "VALIDATION_FAILED"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "deviceId": {
+                    "type": "string"
+                  },
+                  "projectId": {
+                    "type": "string"
+                  },
+                  "alias": {
+                    "type": "string"
+                  },
+                  "adapterId": {
+                    "type": "string"
+                  },
+                  "config": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "deviceId",
+                  "projectId",
+                  "alias",
+                  "adapterId",
+                  "config"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/agents/{agentId}": {
+      "patch": {
+        "summary": "修改",
+        "x-permission": "agent.write",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "alias": {
+                    "type": "string"
+                  },
+                  "projectId": {
+                    "type": "string"
+                  },
+                  "config": {
+                    "type": "object"
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除",
+        "x-permission": "agent.write",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/adapters/input": {
+      "get": {
+        "summary": "可用输入适配器表（input-adapters.v1.json + 节点探测结果）",
+        "x-permission": "agent.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "https://workfleet.dev/contracts/v1/adapters/input-adapter-spec.schema.json"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/channels": {
+      "get": {
+        "summary": "渠道列表",
+        "x-permission": "channel.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/channel.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "新建渠道（凭据经单独端点提交）",
+        "x-permission": "channel.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/channel.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "VALIDATION_FAILED",
+          "BOT_IDENTITY_CONFLICT"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "kind": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "config": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "kind",
+                  "name",
+                  "config"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/adapters/channel": {
+      "get": {
+        "summary": "可用渠道类型及其 configSchema 与默认能力",
+        "x-permission": "channel.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "type": "object"
+                  }
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/channels/{channelId}/credential": {
+      "post": {
+        "summary": "提交渠道凭据（加密存储，响应不回显）",
+        "x-permission": "channel.bind_credential",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "secret": {
+                    "type": "object"
+                  }
+                },
+                "required": [
+                  "secret"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/channels/{channelId}/qr-login": {
+      "post": {
+        "summary": "开始扫码登录（微信），返回二维码与轮询 id",
+        "x-permission": "channel.bind_credential",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "qrImageDataUrl": {
+                      "type": "string"
+                    },
+                    "loginId": {
+                      "type": "string"
+                    },
+                    "expiresAt": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "qrImageDataUrl",
+                    "loginId",
+                    "expiresAt"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/channels/{channelId}/qr-login/{loginId}": {
+      "get": {
+        "summary": "扫码状态",
+        "x-permission": "channel.bind_credential",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "state": {
+                      "enum": [
+                        "waiting",
+                        "scanned",
+                        "confirmed",
+                        "expired",
+                        "failed"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "state"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "NOT_FOUND",
+          "BOT_IDENTITY_CONFLICT",
+          "CHANNEL_CREDENTIAL_EXPIRED"
+        ],
+        "parameters": [
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "loginId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/channels/{channelId}/test": {
+      "post": {
+        "summary": "发送测试消息",
+        "x-permission": "channel.write",
+        "x-auth": "session",
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "recipientId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "recipientId"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/channels/{channelId}": {
+      "delete": {
+        "summary": "删除",
+        "x-permission": "channel.write",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/recipients": {
+      "get": {
+        "summary": "接收人列表",
+        "x-permission": "recipient.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/recipient.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/recipients/{recipientId}/authorize": {
+      "post": {
+        "summary": "授权/取消授权 IM 发送者",
+        "x-permission": "recipient.authorize",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/recipient.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "authorized": {
+                    "type": "boolean"
+                  },
+                  "linkedUserId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "authorized"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recipientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/recipients/bind-confirm": {
+      "post": {
+        "summary": "确认 /bind 的 6 位码（识别我的账号）",
+        "x-permission": "recipient.authorize",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/recipient.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "NOT_FOUND"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/recipients/{recipientId}": {
+      "patch": {
+        "summary": "静默时段等",
+        "x-permission": "recipient.authorize",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/recipient.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "quietHours": {
+                    "type": [
+                      "object",
+                      "null"
+                    ]
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recipientId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/routes": {
+      "get": {
+        "summary": "绑定列表",
+        "x-permission": "route.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/route.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "新建绑定（服务端校验模式约束）",
+        "x-permission": "route.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/route.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "ROUTE_INVALID"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "projectId": {
+                    "type": "string"
+                  },
+                  "name": {
+                    "type": "string"
+                  },
+                  "mode": {
+                    "enum": [
+                      "management",
+                      "notification",
+                      "team",
+                      "supervisor"
+                    ]
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "defaultSourceId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "filterRuleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "priorityFloor": {
+                    "enum": [
+                      "p0",
+                      "p1",
+                      "p2",
+                      "p3"
+                    ]
+                  }
+                },
+                "required": [
+                  "projectId",
+                  "name",
+                  "mode",
+                  "sources",
+                  "targets"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/routes/{routeId}": {
+      "patch": {
+        "summary": "修改",
+        "x-permission": "route.write",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/route.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "ROUTE_INVALID",
+          "CONFLICT"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "sources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "targets": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "defaultSourceId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "filterRuleIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "enabled": {
+                    "type": "boolean"
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除",
+        "x-permission": "route.write",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "routeId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/routes/dry-run": {
+      "post": {
+        "summary": "路由预览：给一条样例入站，返回选路结果与过滤后的各接收人可见内容",
+        "x-permission": "route.dry_run",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "targetAgentId": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reason": {
+                      "type": "string"
+                    },
+                    "held": {
+                      "type": "boolean"
+                    },
+                    "outboundPreview": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "recipientId": {
+                            "type": "string"
+                          },
+                          "renderedAs": {
+                            "enum": [
+                              "card",
+                              "markdown",
+                              "text",
+                              "digest"
+                            ]
+                          },
+                          "filtersApplied": {
+                            "type": "array",
+                            "items": {
+                              "type": "string"
+                            }
+                          },
+                          "suppressed": {
+                            "type": "boolean"
+                          },
+                          "preview": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message-body.schema.json"
+                          }
+                        },
+                        "required": [
+                          "recipientId",
+                          "renderedAs",
+                          "filtersApplied",
+                          "suppressed",
+                          "preview"
+                        ]
+                      }
+                    }
+                  },
+                  "required": [
+                    "targetAgentId",
+                    "reason",
+                    "held",
+                    "outboundPreview"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "recipientId": {
+                    "type": "string"
+                  },
+                  "text": {
+                    "type": "string"
+                  },
+                  "replyToMessageId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  }
+                },
+                "required": [
+                  "recipientId",
+                  "text"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations": {
+      "get": {
+        "summary": "会话列表（projectId/agentId 过滤）",
+        "x-permission": "conversation.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/conversation.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recipientId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "state",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "在 Web 渠道新建会话",
+        "x-permission": "conversation.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/conversation.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "agentId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "agentId"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/{conversationId}/messages": {
+      "get": {
+        "summary": "消息分页（含 generation 过滤）",
+        "x-permission": "conversation.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "generation",
+            "in": "query",
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "Web 渠道发消息/指令（文本以 / 开头按指令解析）",
+        "x-permission": "agent.prompt",
+        "x-auth": "session",
+        "responses": {
+          "202": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "DEVICE_OFFLINE",
+          "EMERGENCY_STOPPED",
+          "AGENT_UNAVAILABLE"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "text": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000
+                  },
+                  "replyToId": {
+                    "type": [
+                      "string",
+                      "null"
+                    ]
+                  },
+                  "attachmentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  }
+                },
+                "required": [
+                  "text"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/{conversationId}/clear": {
+      "post": {
+        "summary": "/clear",
+        "x-permission": "conversation.write",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/conversation.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/conversations/{conversationId}/cancel": {
+      "post": {
+        "summary": "/stop",
+        "x-permission": "agent.stop",
+        "x-auth": "session",
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/history/search": {
+      "get": {
+        "summary": "历史检索：q（FTS 中文 trigram）或 displayId 或 nativeSessionId；可选 includeAgentTranscript（节点在线时从节点取）",
+        "x-permission": "history.search",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "conversations": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/conversation.schema.json"
+                      }
+                    },
+                    "messages": {
+                      "type": "array",
+                      "items": {
+                        "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message.schema.json"
+                      }
+                    },
+                    "agentTranscript": {
+                      "type": [
+                        "array",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "conversations",
+                    "messages",
+                    "agentTranscript"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "displayId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "nativeSessionId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "conversationId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "projectId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "includeAgentTranscript",
+            "in": "query",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/stream": {
+      "get": {
+        "summary": "WebSocket 升级：订阅会话事件/审批/通知（Web 渠道实时通道）",
+        "x-permission": "conversation.read",
+        "x-auth": "session",
+        "responses": {
+          "101": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "description": "下行事件 schema：schemas/entities/stream-event.schema.json"
+      }
+    },
+    "/api/v1/approvals": {
+      "get": {
+        "summary": "审批收件箱",
+        "x-permission": "conversation.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/approval.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "agentId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/approvals/{approvalId}/decide": {
+      "post": {
+        "summary": "审批（high 风险需 approval.decide_high 或设备所有者）",
+        "x-permission": "approval.decide_low",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/approval.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "APPROVAL_EXPIRED",
+          "APPROVAL_ALREADY_DECIDED",
+          "FORBIDDEN"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "optionId": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "optionId"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "approvalId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/barriers": {
+      "get": {
+        "summary": "汇总屏障列表",
+        "x-permission": "route.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/barrier.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "为团队/通知绑定开汇总屏障",
+        "x-permission": "route.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/barrier.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [
+          "ROUTE_INVALID",
+          "VALIDATION_FAILED"
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "routeId": {
+                    "type": "string"
+                  },
+                  "expectedSources": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "timeoutSec": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "routeId",
+                  "expectedSources",
+                  "timeoutSec"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/filter-rules": {
+      "get": {
+        "summary": "过滤规则",
+        "x-permission": "filter.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/filter-rule.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          }
+        ]
+      },
+      "post": {
+        "summary": "新建",
+        "x-permission": "filter.write",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/filter-rule.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "match": {
+                    "type": "object"
+                  },
+                  "action": {
+                    "enum": [
+                      "allow_fields",
+                      "mask_fields",
+                      "drop_message"
+                    ]
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "maskStyle": {
+                    "enum": [
+                      "full",
+                      "partial",
+                      "hash"
+                    ]
+                  }
+                },
+                "required": [
+                  "name",
+                  "match",
+                  "action",
+                  "fields"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "Idempotency-Key",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "maxLength": 200
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/filter-rules/{filterRuleId}": {
+      "patch": {
+        "summary": "修改",
+        "x-permission": "filter.write",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/filter-rule.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "name": {
+                    "type": "string"
+                  },
+                  "match": {
+                    "type": "object"
+                  },
+                  "fields": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterRuleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      },
+      "delete": {
+        "summary": "删除",
+        "x-permission": "filter.write",
+        "x-auth": "session",
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "filterRuleId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/audit": {
+      "get": {
+        "summary": "审计查询（action/resource/时间范围）",
+        "x-permission": "audit.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/audit-entry.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "action",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resourceType",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "resourceId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "from",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "to",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/deliveries": {
+      "get": {
+        "summary": "投递明细（含死信）",
+        "x-permission": "audit.read",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "allOf": [
+                    {
+                      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/page.schema.json"
+                    },
+                    {
+                      "properties": {
+                        "items": {
+                          "type": "array",
+                          "items": {
+                            "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/delivery.schema.json"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "cursor",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 200
+            }
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "recipientId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/deliveries/{deliveryId}/replay": {
+      "post": {
+        "summary": "重放死信",
+        "x-permission": "channel.write",
+        "x-auth": "session",
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "deliveryId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/push-subscriptions": {
+      "post": {
+        "summary": "登记 Web Push 订阅（VAPID）",
+        "x-permission": "notification.subscribe",
+        "x-auth": "session",
+        "responses": {
+          "201": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "endpoint": {
+                    "type": "string"
+                  },
+                  "keys": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "properties": {
+                      "p256dh": {
+                        "type": "string"
+                      },
+                      "auth": {
+                        "type": "string"
+                      }
+                    },
+                    "required": [
+                      "p256dh",
+                      "auth"
+                    ]
+                  },
+                  "minPriority": {
+                    "enum": [
+                      "p0",
+                      "p1",
+                      "p2",
+                      "p3"
+                    ]
+                  }
+                },
+                "required": [
+                  "endpoint",
+                  "keys"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/push/vapid-public-key": {
+      "get": {
+        "summary": "VAPID 公钥",
+        "x-permission": "public",
+        "x-auth": "none",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "key": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "key"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/emergency/stop-all": {
+      "post": {
+        "summary": "急停",
+        "x-permission": "emergency.stop_all",
+        "x-auth": "session",
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "reason": {
+                    "type": "string"
+                  }
+                },
+                "required": [
+                  "reason"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/emergency/resume": {
+      "post": {
+        "summary": "恢复",
+        "x-permission": "emergency.resume",
+        "x-auth": "session",
+        "responses": {
+          "202": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/config/export": {
+      "get": {
+        "summary": "导出业务配置 YAML（不含密钥）",
+        "x-permission": "config.export",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "YAML",
+            "content": {
+              "application/yaml": {
+                "schema": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/config/import": {
+      "post": {
+        "summary": "导入（先 dry-run 返回差异，confirm=true 才写入）",
+        "x-permission": "config.import",
+        "x-auth": "session",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "diff": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "additionalProperties": false,
+                        "properties": {
+                          "op": {
+                            "enum": [
+                              "add",
+                              "update",
+                              "remove"
+                            ]
+                          },
+                          "resourceType": {
+                            "type": "string"
+                          },
+                          "key": {
+                            "type": "string"
+                          },
+                          "before": {},
+                          "after": {}
+                        },
+                        "required": [
+                          "op",
+                          "resourceType",
+                          "key"
+                        ]
+                      }
+                    },
+                    "applied": {
+                      "type": "boolean"
+                    }
+                  },
+                  "required": [
+                    "diff",
+                    "applied"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "yaml": {
+                    "type": "string"
+                  },
+                  "confirm": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "yaml"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/health": {
+      "get": {
+        "summary": "健康检查",
+        "x-permission": "public",
+        "x-auth": "none",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "status": {
+                      "enum": [
+                        "ok",
+                        "degraded"
+                      ]
+                    },
+                    "version": {
+                      "type": "string"
+                    },
+                    "db": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "status",
+                    "version",
+                    "db"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/node-gateway": {
+      "get": {
+        "summary": "节点 WSS 升级（Authorization: Bearer 设备令牌）",
+        "x-permission": "public",
+        "x-auth": "device",
+        "responses": {
+          "101": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "x-errors": []
+      }
+    },
+    "/api/v1/invitations/{token}/accept": {
+      "post": {
+        "summary": "接受邀请（未登录则同时注册）",
+        "x-permission": "public",
+        "x-auth": "none",
+        "x-errors": [
+          "INVITATION_INVALID",
+          "VALIDATION_FAILED"
+        ],
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/membership.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "password": {
+                    "type": "string"
+                  },
+                  "displayName": {
+                    "type": "string"
+                  }
+                },
+                "required": []
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/me/totp/setup": {
+      "post": {
+        "summary": "开始 TOTP 绑定，返回 otpauth URI",
+        "x-permission": "public",
+        "x-auth": "session",
+        "x-errors": [],
+        "responses": {
+          "201": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "otpauthUri": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "otpauthUri"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/me/totp/verify": {
+      "post": {
+        "summary": "校验 6 位码并启用 TOTP",
+        "x-permission": "public",
+        "x-auth": "session",
+        "x-errors": [
+          "VALIDATION_FAILED"
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "code": {
+                    "type": "string",
+                    "pattern": "^[0-9]{6}$"
+                  }
+                },
+                "required": [
+                  "code"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/me/notification-settings": {
+      "get": {
+        "summary": "通知设置与备用渠道",
+        "x-permission": "notification.subscribe",
+        "x-auth": "session",
+        "x-errors": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/notification-settings.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "summary": "更新通知设置",
+        "x-permission": "notification.subscribe",
+        "x-auth": "session",
+        "x-errors": [
+          "CONFLICT",
+          "VALIDATION_FAILED"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/notification-settings.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "additionalProperties": false,
+                "properties": {
+                  "minPriorityWebPush": {
+                    "enum": [
+                      "p0",
+                      "p1",
+                      "p2",
+                      "p3"
+                    ]
+                  },
+                  "fallbackRecipientIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string"
+                    }
+                  },
+                  "healthAlertsEnabled": {
+                    "type": "boolean"
+                  },
+                  "version": {
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "version"
+                ]
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/push-subscriptions/{pushSubscriptionId}": {
+      "delete": {
+        "summary": "删除 Web Push 订阅",
+        "x-permission": "notification.subscribe",
+        "x-auth": "session",
+        "x-errors": [
+          "NOT_FOUND"
+        ],
+        "responses": {
+          "204": {
+            "description": "OK"
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "pushSubscriptionId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/barriers/{barrierId}": {
+      "get": {
+        "summary": "屏障详情",
+        "x-permission": "route.read",
+        "x-auth": "session",
+        "x-errors": [
+          "NOT_FOUND"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/barrier.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "barrierId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/barriers/{barrierId}/cancel": {
+      "post": {
+        "summary": "取消屏障",
+        "x-permission": "route.write",
+        "x-auth": "session",
+        "x-errors": [
+          "NOT_FOUND",
+          "CONFLICT"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/barrier.schema.json"
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        },
+        "parameters": [
+          {
+            "name": "barrierId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "X-CSRF-Token",
+            "in": "header",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ]
+      }
+    },
+    "/api/v1/emergency/status": {
+      "get": {
+        "summary": "急停状态（组织级）",
+        "x-permission": "conversation.read",
+        "x-auth": "session",
+        "x-errors": [],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "properties": {
+                    "stopped": {
+                      "type": "boolean"
+                    },
+                    "since": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    },
+                    "reason": {
+                      "type": [
+                        "string",
+                        "null"
+                      ]
+                    }
+                  },
+                  "required": [
+                    "stopped",
+                    "since",
+                    "reason"
+                  ]
+                }
+              }
+            }
+          },
+          "default": {
+            "description": "错误（见 errors/error-codes.json）",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "https://workfleet.dev/contracts/v1/schemas/common/error.schema.json"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

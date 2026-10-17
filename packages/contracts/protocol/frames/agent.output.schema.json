@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.output.schema.json",
+  "title": "agent.output",
+  "description": "帧 agent.output，方向：node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "conversationId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "messageId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+    },
+    "replyToId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "final",
+        "status",
+        "error",
+        "digest"
+      ]
+    },
+    "priority": {
+      "type": "string",
+      "enum": [
+        "p0",
+        "p1",
+        "p2",
+        "p3"
+      ]
+    },
+    "body": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/message-body.schema.json"
+    },
+    "supervisorVerdict": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "enum": [
+        "reply",
+        "merge",
+        "escalate",
+        "drop",
+        null
+      ]
+    },
+    "nativeSessionId": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "supersedesMessageId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+    },
+    "barrierId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/barrierId"
+    }
+  },
+  "required": [
+    "conversationId",
+    "generation",
+    "messageId",
+    "kind",
+    "priority",
+    "body",
+    "agentId"
+  ]
+}

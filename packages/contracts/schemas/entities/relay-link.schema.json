@@ -1,0 +1,50 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/relay-link.schema.json",
+  "title": "relay-link",
+  "description": "节点上的中转连接（多中转，DEC-048）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/relayLinkId"
+    },
+    "label": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "url": {
+      "type": "string",
+      "pattern": "^wss?://",
+      "description": "生产必须 wss://；ws:// 仅允许 127.0.0.1/localhost（E2E）"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "deviceId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/deviceId"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "connected",
+        "connecting",
+        "disconnected",
+        "revoked"
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "label",
+    "url",
+    "tenantId",
+    "deviceId",
+    "status",
+    "createdAt"
+  ]
+}

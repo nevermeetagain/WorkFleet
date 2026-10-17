@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/barrier.submit.schema.json",
+  "title": "barrier.submit",
+  "description": "帧 barrier.submit，方向：node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "barrierId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/barrierId"
+    },
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "messageId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+    }
+  },
+  "required": [
+    "barrierId",
+    "agentId",
+    "messageId"
+  ]
+}

@@ -1,0 +1,16 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/approval.request.schema.json",
+  "title": "approval.request",
+  "description": "帧 approval.request，方向：node；approval.shortCode 由节点填 0 占位，中转在组织内重新分配并回写",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "approval": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/approval.schema.json"
+    }
+  },
+  "required": [
+    "approval"
+  ]
+}

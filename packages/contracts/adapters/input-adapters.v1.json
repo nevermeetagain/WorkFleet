@@ -1,0 +1,581 @@
+{
+  "$comment": "v1 输入适配器表（DEC-055）。所有启动参数与 loadSession 支持为规划假设（U-05），由 TASK-022/081–084 实测后经 Agent-Contract 同步。",
+  "adapters": [
+    {
+      "adapterId": "claude-code",
+      "displayName": "Claude Code",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@zed-industries/claude-agent-acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.com/zed-industries/claude-agent-acp"
+    },
+    {
+      "adapterId": "codex",
+      "displayName": "Codex CLI",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "npx",
+        "args": [
+          "-y",
+          "@zed-industries/codex-acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.com/agentclientprotocol/codex-acp"
+    },
+    {
+      "adapterId": "cursor",
+      "displayName": "Cursor",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "agent",
+        "args": [
+          "acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://cursor.com/docs/cli/acp"
+    },
+    {
+      "adapterId": "gemini-cli",
+      "displayName": "Gemini CLI",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "gemini",
+        "args": [
+          "--experimental-acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.com/google-gemini/gemini-cli"
+    },
+    {
+      "adapterId": "github-copilot",
+      "displayName": "GitHub Copilot CLI",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": true,
+      "launch": {
+        "command": "copilot",
+        "args": [
+          "--acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.blog/changelog/2026-01-28-acp-support-in-copilot-cli-is-now-in-public-preview/"
+    },
+    {
+      "adapterId": "qwen-code",
+      "displayName": "Qwen Code",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "qwen",
+        "args": [
+          "--experimental-acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.com/QwenLM/qwen-code"
+    },
+    {
+      "adapterId": "kimi-cli",
+      "displayName": "Kimi CLI",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "kimi",
+        "args": [
+          "--acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.com/MoonshotAI/kimi-cli"
+    },
+    {
+      "adapterId": "opencode",
+      "displayName": "OpenCode",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "opencode",
+        "args": [
+          "acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://github.com/sst/opencode"
+    },
+    {
+      "adapterId": "goose",
+      "displayName": "Goose",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "goose",
+        "args": [
+          "acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://block.github.io/goose/docs/guides/acp-clients"
+    },
+    {
+      "adapterId": "cline",
+      "displayName": "Cline",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "cline",
+        "args": [
+          "--acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://cline.bot/"
+    },
+    {
+      "adapterId": "qoder-cli",
+      "displayName": "Qoder CLI",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "qodercli",
+        "args": [
+          "--acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://docs.qoder.com/cli/acp"
+    },
+    {
+      "adapterId": "openclaw",
+      "displayName": "OpenClaw",
+      "family": "acp",
+      "source": "acp_registry",
+      "experimental": false,
+      "launch": {
+        "command": "openclaw",
+        "args": [
+          "acp"
+        ],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      },
+      "docsUrl": "https://docs.openclaw.ai/cli/acp"
+    },
+    {
+      "adapterId": "zcode",
+      "displayName": "ZCode（实验）",
+      "family": "acp",
+      "source": "community",
+      "experimental": true,
+      "launch": {
+        "command": "zcode-acp-server",
+        "args": [],
+        "cwdMode": "workdir"
+      },
+      "auth": "agent_managed",
+      "dialect": "zcode",
+      "supportsLoadSession": false,
+      "supportsWriteTools": true,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "workdir": {
+            "type": "string",
+            "title": "工作目录"
+          },
+          "writeMode": {
+            "type": "string",
+            "enum": [
+              "read_only",
+              "write"
+            ],
+            "default": "write"
+          }
+        },
+        "required": [
+          "workdir"
+        ]
+      }
+    },
+    {
+      "adapterId": "coze",
+      "displayName": "Coze",
+      "family": "coze_http",
+      "source": "builtin",
+      "experimental": false,
+      "auth": "env_key",
+      "dialect": "",
+      "supportsLoadSession": true,
+      "supportsWriteTools": false,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "botId": {
+            "type": "string"
+          },
+          "apiBase": {
+            "type": "string",
+            "enum": [
+              "https://api.coze.cn",
+              "https://api.coze.com"
+            ]
+          },
+          "keyRef": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "botId",
+          "apiBase",
+          "keyRef"
+        ]
+      }
+    },
+    {
+      "adapterId": "webhook",
+      "displayName": "Webhook/HTTP 输入",
+      "family": "webhook",
+      "source": "builtin",
+      "experimental": false,
+      "auth": "none",
+      "dialect": "",
+      "supportsLoadSession": false,
+      "supportsWriteTools": false,
+      "configSchema": {
+        "type": "object",
+        "properties": {
+          "secretRef": {
+            "type": "string",
+            "title": "HMAC 密钥"
+          },
+          "defaultPriority": {
+            "type": "string",
+            "enum": [
+              "p0",
+              "p1",
+              "p2",
+              "p3"
+            ]
+          }
+        },
+        "required": [
+          "secretRef"
+        ]
+      }
+    }
+  ],
+  "verifyNotes": {
+    "claude-code": "npm 包名存在 @zed-industries/* 与 @agentclientprotocol/* 两种记录（V0.0.2/30/02），以 TASK-022 实测为准",
+    "codex": "npm 包名存在 @zed-industries/* 与 @agentclientprotocol/* 两种记录（V0.0.2/30/02），以 TASK-022 实测为准"
+  }
+}

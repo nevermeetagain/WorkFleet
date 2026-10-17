@@ -1,0 +1,10 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/ping.schema.json",
+  "title": "ping",
+  "description": "帧 ping，方向：both",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {},
+  "required": []
+}

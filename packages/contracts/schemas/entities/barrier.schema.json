@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/barrier.schema.json",
+  "title": "barrier",
+  "description": "汇总屏障（G1）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/barrierId"
+    },
+    "routeId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/routeId"
+    },
+    "expectedSources": {
+      "type": "array",
+      "minItems": 2,
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+      }
+    },
+    "received": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+      }
+    },
+    "timeoutSec": {
+      "type": "integer",
+      "minimum": 10,
+      "maximum": 86400
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "open",
+        "complete",
+        "timed_out",
+        "cancelled"
+      ]
+    },
+    "openedAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "closedAt": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "missingSources": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+      }
+    },
+    "summaryMessageId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "routeId",
+    "expectedSources",
+    "received",
+    "timeoutSec",
+    "status",
+    "openedAt",
+    "closedAt",
+    "tenantId",
+    "missingSources",
+    "summaryMessageId"
+  ]
+}

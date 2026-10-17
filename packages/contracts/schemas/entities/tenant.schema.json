@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/tenant.schema.json",
+  "title": "tenant",
+  "description": "组织（租户）。个人注册时自动建 personal 组织",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "personal",
+        "company"
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "attachmentRetentionDays": {
+      "type": "integer",
+      "minimum": 7,
+      "maximum": 365,
+      "default": 90
+    },
+    "emergencyStopped": {
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "id",
+    "name",
+    "kind",
+    "createdAt",
+    "attachmentRetentionDays",
+    "emergencyStopped"
+  ]
+}

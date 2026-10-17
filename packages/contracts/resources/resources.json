@@ -1,0 +1,23 @@
+{
+  "$comment": "契约 ④ Resources",
+  "attachments": {
+    "upload": "POST /api/v1/attachments（multipart，≤ 25 MiB，鉴权=会话或设备令牌）→ attachmentId",
+    "download": "GET /api/v1/attachments/{attachmentId}（需会话；返回 302 到 5 分钟有效的签名 URL /files/{attachmentId}?exp=&sig=）",
+    "storage": "中转数据目录 attachments/{tenantId}/{yyyy}/{mm}/{attachmentId}；库内只存元数据（DEC-004）",
+    "allowedMime": [
+      "image/png",
+      "image/jpeg",
+      "image/webp",
+      "application/pdf",
+      "text/plain",
+      "text/markdown",
+      "application/zip"
+    ],
+    "lifecycle": "默认保留 90 天，组织可配 7–365 天；删除会话时级联软删除，7 天后物理删除",
+    "acl": "同 tenant 且对所属 conversation 有 conversation.read；签名 URL 绑定 attachmentId+exp",
+    "imFetch": "渠道入站附件由中转下载到本地存储后再生成 attachmentId；不向节点暴露渠道原始 URL"
+  },
+  "nodeFiles": {
+    "rule": "节点工作目录文件永不上传；智能体输出中的文件引用以相对路径文本呈现，用户主动“发送文件”才走附件上传（DEC-037）"
+  }
+}

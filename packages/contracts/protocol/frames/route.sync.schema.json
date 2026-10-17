@@ -1,0 +1,24 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/route.sync.schema.json",
+  "title": "route.sync",
+  "description": "帧 route.sync，方向：relay→node（哪些智能体处于总控模式；中转同时拦截缺 supervisorVerdict 的此类输出）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "supervisedAgentIds": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+      }
+    },
+    "routesVersion": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "supervisedAgentIds",
+    "routesVersion"
+  ]
+}

@@ -1,0 +1,89 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/twin-event.schema.json",
+  "title": "twin-event",
+  "description": "分身数据事件（节点本机；DEC-049）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/twinEventId"
+    },
+    "kind": {
+      "type": "string",
+      "enum": [
+        "instruction",
+        "approval",
+        "correction",
+        "command",
+        "task_started",
+        "task_finished",
+        "routed",
+        "decision_point"
+      ]
+    },
+    "text": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 20000
+    },
+    "refs": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "conversationId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+        },
+        "agentId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+        },
+        "messageId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/messageId"
+        },
+        "approvalId": {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/approvalId"
+        }
+      }
+    },
+    "durationMs": {
+      "type": [
+        "integer",
+        "null"
+      ],
+      "minimum": 0
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "editedAt": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "relayLinkId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/relayLinkId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    }
+  },
+  "required": [
+    "id",
+    "kind",
+    "text",
+    "refs",
+    "durationMs",
+    "createdAt",
+    "editedAt",
+    "relayLinkId"
+  ]
+}

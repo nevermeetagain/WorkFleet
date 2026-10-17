@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agent.status.schema.json",
+  "title": "agent.status",
+  "description": "帧 agent.status，方向：node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "status": {
+      "type": "string",
+      "enum": [
+        "idle",
+        "running",
+        "waiting_approval",
+        "stopped",
+        "error",
+        "unavailable"
+      ]
+    },
+    "queueDepth": {
+      "type": "integer",
+      "minimum": 0
+    }
+  },
+  "required": [
+    "agentId",
+    "status",
+    "queueDepth"
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/agents.sync.schema.json",
+  "title": "agents.sync",
+  "description": "帧 agents.sync，方向：node",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "agents": {
+      "type": "array",
+      "items": {
+        "$ref": "https://workfleet.dev/contracts/v1/schemas/entities/agent.schema.json"
+      }
+    }
+  },
+  "required": [
+    "agents"
+  ]
+}

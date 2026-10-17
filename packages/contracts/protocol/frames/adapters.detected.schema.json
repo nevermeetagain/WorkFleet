@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/adapters.detected.schema.json",
+  "title": "adapters.detected",
+  "description": "帧 adapters.detected，方向：node→relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "properties": {
+          "adapterId": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 64
+          },
+          "installed": {
+            "type": "boolean"
+          },
+          "version": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 64
+          },
+          "error": {
+            "type": "string",
+            "minLength": 0,
+            "maxLength": 500
+          }
+        },
+        "required": [
+          "adapterId",
+          "installed"
+        ]
+      }
+    }
+  },
+  "required": [
+    "items"
+  ]
+}

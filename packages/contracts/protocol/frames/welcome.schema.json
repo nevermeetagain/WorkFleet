@@ -1,0 +1,48 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/welcome.schema.json",
+  "title": "welcome",
+  "description": "帧 welcome，方向：relay",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "deviceId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/deviceId"
+    },
+    "lastAckedNodeSeq": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "serverTime": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "heartbeatSec": {
+      "type": "integer",
+      "const": 20
+    },
+    "emergencyStopped": {
+      "type": "boolean"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "defaultProjectId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/projectId"
+    },
+    "protocolVersions": {
+      "type": "array",
+      "items": {
+        "type": "integer"
+      }
+    }
+  },
+  "required": [
+    "deviceId",
+    "lastAckedNodeSeq",
+    "serverTime",
+    "heartbeatSec",
+    "emergencyStopped",
+    "tenantId",
+    "defaultProjectId"
+  ]
+}

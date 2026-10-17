@@ -1,0 +1,64 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/channel.schema.json",
+  "title": "channel",
+  "description": "输出端（渠道实例）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/channelId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "kind": {
+      "type": "string",
+      "pattern": "^[a-z][a-z0-9_]{1,31}$",
+      "description": "wechat_clawbot|feishu|qq|dingtalk|telegram|discord|web；不做 DB 枚举（DEC-008）"
+    },
+    "name": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 80
+    },
+    "config": {
+      "type": "object",
+      "description": "按适配器 configSchema 校验；不含明文密钥"
+    },
+    "credentialRef": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 128
+    },
+    "capabilities": {
+      "$ref": "https://workfleet.dev/contracts/v1/adapters/channel-capabilities.schema.json"
+    },
+    "health": {
+      "type": "string",
+      "enum": [
+        "healthy",
+        "degraded",
+        "expired",
+        "disconnected",
+        "disabled"
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "kind",
+    "name",
+    "config",
+    "credentialRef",
+    "capabilities",
+    "health",
+    "createdAt"
+  ]
+}

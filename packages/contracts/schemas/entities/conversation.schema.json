@@ -1,0 +1,91 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/schemas/entities/conversation.schema.json",
+  "title": "conversation",
+  "description": "会话：稳定 id + generation + displayId + 原生 session/resume id（DEC-004）",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/conversationId"
+    },
+    "tenantId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/tenantId"
+    },
+    "projectId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/projectId"
+    },
+    "agentId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/agentId"
+    },
+    "routeId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/routeId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "recipientId": {
+      "oneOf": [
+        {
+          "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/recipientId"
+        },
+        {
+          "type": "null"
+        }
+      ]
+    },
+    "generation": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "displayId": {
+      "type": "string",
+      "pattern": "^[A-Z]{2,4}-\\d{1,6}$"
+    },
+    "nativeSessionId": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "maxLength": 256
+    },
+    "title": {
+      "type": "string",
+      "minLength": 0,
+      "maxLength": 200
+    },
+    "state": {
+      "type": "string",
+      "enum": [
+        "active",
+        "cleared",
+        "closed"
+      ]
+    },
+    "createdAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    },
+    "updatedAt": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/timestamp.schema.json"
+    }
+  },
+  "required": [
+    "id",
+    "tenantId",
+    "projectId",
+    "agentId",
+    "routeId",
+    "recipientId",
+    "generation",
+    "displayId",
+    "nativeSessionId",
+    "title",
+    "state",
+    "createdAt",
+    "updatedAt"
+  ]
+}

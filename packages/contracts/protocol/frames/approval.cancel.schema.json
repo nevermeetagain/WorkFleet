@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://workfleet.dev/contracts/v1/protocol/frames/approval.cancel.schema.json",
+  "title": "approval.cancel",
+  "description": "帧 approval.cancel，方向：both",
+  "type": "object",
+  "additionalProperties": false,
+  "properties": {
+    "approvalId": {
+      "$ref": "https://workfleet.dev/contracts/v1/schemas/common/ids.schema.json#/$defs/approvalId"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 200
+    }
+  },
+  "required": [
+    "approvalId",
+    "reason"
+  ]
+}
